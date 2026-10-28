@@ -1,0 +1,11 @@
+.env
+.conda/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+*.log
+chunks.json
+embeddings.npy
+textes_bruts/*.txt
+textes_propres/*.txt

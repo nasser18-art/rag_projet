@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Assistant documentaire</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Conversations">
+      <div class="brand"><span class="brand-mark">◈</span><span>Assistant documentaire</span></div>
+      <button id="new-chat" class="new-chat">＋ Nouvelle conversation</button>
+      <nav id="history" class="history" aria-label="Historique de la session"></nav>
+      <div class="sidebar-bottom"><button id="theme-toggle" class="quiet-button" aria-label="Activer le thème sombre">◐ <span>Thème</span></button></div>
+    </aside>
+    <main class="main">
+      <header class="mobile-header"><button id="mobile-new-chat" class="icon-button" aria-label="Nouvelle conversation">＋</button><span>Assistant documentaire</span><button id="mobile-theme" class="icon-button" aria-label="Changer le thème">◐</button></header>
+      <section id="chat" class="chat" aria-live="polite" aria-label="Conversation">
+        <div id="welcome" class="welcome">
+          <div class="welcome-icon">◈</div>
+          <h1>Comment puis-je vous aider&nbsp;?</h1>
+          <p>Je réponds à partir des documents internes disponibles.</p>
+          <div class="examples" aria-label="Exemples de questions">
+            <button data-question="Quelles sont les règles d'utilisation d'internet au travail ?">Règles d’utilisation d’internet</button>
+            <button data-question="Comment demander un congé ?">Demander un congé</button>
+            <button data-question="Quelle est la procédure de télétravail ?">Procédure de télétravail</button>
+            <button data-question="Comment valider une dépense ?">Valider une dépense</button>
+          </div>
+        </div>
+      </section>
+      <div class="composer-wrap">
+        <form id="composer" class="composer">
+          <label class="sr-only" for="question">Votre question</label>
+          <textarea id="question" rows="1" maxlength="4000" placeholder="Posez votre question sur les documents internes…" autofocus></textarea>
+          <button id="send" type="submit" aria-label="Envoyer la question"><span>↑</span></button>
+        </form>
+        <p class="hint">Entrée pour envoyer · Maj + Entrée pour un retour à la ligne</p>
+      </div>
+    </main>
+  </div>
+  <template id="message-template"><article class="message"><div class="avatar"></div><div class="message-content"><div class="message-toolbar"><span class="sender"></span><button class="copy quiet-button" aria-label="Copier la réponse">Copier</button></div><div class="markdown"></div><div class="sources"></div></div></article></template>
+  <script src="/static/app.js"></script>
+</body>
+</html>
