@@ -83,6 +83,21 @@ app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 class ChatRequest(BaseModel):
     question: Annotated[str, Field(min_length=1, max_length=4_000)]
     stream: bool = True
+    conversation_id: str | None = None
+    category: str | None = None
+
+
+class ConversationCreate(BaseModel):
+    title: Annotated[str, Field(min_length=1, max_length=200)] = "Nouvelle conversation"
+    category: str | None = None
+
+
+class ConversationRename(BaseModel):
+    title: Annotated[str, Field(min_length=1, max_length=200)]
+
+
+class FeedbackRequest(BaseModel):
+    feedback: str | None = None
 
 
 class SourceResponse(BaseModel):
@@ -341,30 +356,145 @@ def source(source_id: str) -> dict:
 # Conversation
 # --------------------------------------------------------------------------- #
 
+def _existing_conversation(payload: ChatRequest) -> dict | None:
+    """Conversation demandée, ou None s'il faut la créer.
+
+    La création est différée après le succès du moteur : un échec (503, 502) ne
+    doit pas laisser de conversation vide dans l'historique.
+    """
+    if not payload.conversation_id:
+        return None
+    conversation = store.get_conversation(payload.conversation_id)
+    if conversation is None:
+        raise HTTPException(status_code=404, detail="Conversation introuvable.")
+    return conversation
+
+
+def _title_from_question(question: str) -> str:
+    cleaned = " ".join(question.split())
+    return (cleaned[:60] + "…") if len(cleaned) > 60 else (cleaned or "Nouvelle conversation")
+
+
+def _persist_turn(conversation_id: str, question: str, answer: str, sources: list, model: str | None) -> dict:
+    store.add_message(conversation_id, role="user", content=question)
+    assistant = store.add_message(
+        conversation_id,
+        role="assistant",
+        content=answer,
+        sources=[source.as_dict() if hasattr(source, "as_dict") else dict(source) for source in sources],
+        model=model,
+    )
+    return assistant
+
+
 @app.post("/api/chat")
 def chat(payload: ChatRequest):
     question = payload.question.strip()
     if not question:
         raise HTTPException(status_code=422, detail="Veuillez saisir une question.")
+    conversation = _existing_conversation(payload)
     try:
         if not payload.stream:
             answer, sources = engine.answer(question)
-            return {"answer": answer, "sources": [source.as_dict() for source in sources]}
+            conversation = conversation or store.create_conversation(
+                title=_title_from_question(question), category=payload.category
+            )
+            message = _persist_turn(conversation["id"], question, answer, sources, settings.groq_model)
+            return {
+                "answer": answer,
+                "sources": [source.as_dict() for source in sources],
+                "conversation_id": conversation["id"],
+                "message_id": message["id"],
+            }
         tokens, sources = engine.stream_answer(question)
-    except (RagConfigurationError, RagProviderError) as exc:
+    except HTTPException:
+        raise
+    except Exception as exc:  # RagConfigurationError, RagProviderError et tout imprévu
         raise public_error(exc) from exc
 
+    conversation = conversation or store.create_conversation(
+        title=_title_from_question(question), category=payload.category
+    )
+    store.add_message(conversation["id"], role="user", content=question)
+
     def event_stream():
-        yield f"data: {json.dumps({'type': 'sources', 'sources': [source.as_dict() for source in sources]}, ensure_ascii=False)}\n\n"
+        collected: list[str] = []
+        yield f"data: {json.dumps({'type': 'sources', 'sources': [source.as_dict() for source in sources], 'conversation_id': conversation['id']}, ensure_ascii=False)}\n\n"
         try:
             for token in tokens:
+                collected.append(token)
                 yield f"data: {json.dumps({'type': 'token', 'content': token}, ensure_ascii=False)}\n\n"
-            yield 'data: {"type":"done"}\n\n'
+            message = store.add_message(
+                conversation["id"],
+                role="assistant",
+                content="".join(collected),
+                sources=[source.as_dict() for source in sources],
+                model=settings.groq_model,
+            )
+            yield f"data: {json.dumps({'type': 'done', 'conversation_id': conversation['id'], 'message_id': message['id']})}\n\n"
         except Exception:
             logger.exception("Interruption du flux de réponse")
+            partial = "".join(collected)
+            if partial:
+                store.add_message(conversation["id"], role="assistant", content=partial,
+                                  sources=[source.as_dict() for source in sources], model=settings.groq_model)
             yield 'data: {"type":"error","message":"La réponse a été interrompue. Réessayez."}\n\n'
 
     return StreamingResponse(event_stream(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+# --------------------------------------------------------------------------- #
+# Conversations
+# --------------------------------------------------------------------------- #
+
+@app.get("/api/conversations")
+def list_conversations() -> dict:
+    return {"conversations": store.list_conversations()}
+
+
+@app.post("/api/conversations", status_code=201)
+def create_conversation(payload: ConversationCreate) -> dict:
+    return store.create_conversation(title=payload.title.strip() or "Nouvelle conversation", category=payload.category)
+
+
+@app.get("/api/conversations/{conversation_id}")
+def get_conversation(conversation_id: str) -> dict:
+    conversation = store.get_conversation(conversation_id)
+    if conversation is None:
+        raise HTTPException(status_code=404, detail="Conversation introuvable.")
+    return conversation
+
+
+@app.patch("/api/conversations/{conversation_id}")
+def rename_conversation(conversation_id: str, payload: ConversationRename) -> dict:
+    if not store.rename_conversation(conversation_id, payload.title):
+        raise HTTPException(status_code=404, detail="Conversation introuvable.")
+    return store.get_conversation(conversation_id)
+
+
+@app.delete("/api/conversations/{conversation_id}", status_code=204)
+def delete_conversation(conversation_id: str) -> None:
+    if not store.delete_conversation(conversation_id):
+        raise HTTPException(status_code=404, detail="Conversation introuvable.")
+
+
+@app.post("/api/messages/{message_id}/feedback", status_code=204)
+def message_feedback(message_id: str, payload: FeedbackRequest) -> None:
+    if payload.feedback not in (None, "up", "down"):
+        raise HTTPException(status_code=422, detail="Valeur attendue : « up », « down » ou nulle.")
+    if not store.set_message_feedback(message_id, payload.feedback):
+        raise HTTPException(status_code=404, detail="Message introuvable.")
+
+
+@app.get("/api/search")
+def search(q: str = "") -> dict:
+    term = q.strip()
+    if not term:
+        return {"documents": [], "conversations": []}
+    return {
+        "documents": store.list_documents(query=term),
+        "conversations": [item for item in store.list_conversations() if term.casefold() in item["title"].casefold()],
+    }
 
 
 # --------------------------------------------------------------------------- #

@@ -7,12 +7,15 @@ valide le format exact des trames, pas la génération.
 from __future__ import annotations
 
 import json
+import tempfile
 import unittest
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 
 import app as application
 from rag.engine import RagConfigurationError, Source
+from rag.store import Store
 
 
 class StubEngine:
@@ -44,11 +47,14 @@ class FailingEngine(StubEngine):
 
 class ChatStreamTests(unittest.TestCase):
     def setUp(self) -> None:
-        self._previous = application.engine
+        self._directory = tempfile.TemporaryDirectory()
+        self._previous = (application.engine, application.store)
+        application.store = Store(Path(self._directory.name) / "chat.db")
         self.client = TestClient(application.app)
 
     def tearDown(self) -> None:
-        application.engine = self._previous
+        application.engine, application.store = self._previous
+        self._directory.cleanup()
 
     def _events(self, response) -> list[dict]:
         events = []
@@ -69,13 +75,16 @@ class ChatStreamTests(unittest.TestCase):
         self.assertEqual(events[0]["sources"][0]["document"], "Contrat Atlas.pdf")
         self.assertEqual([event["type"] for event in events[1:-1]], ["token", "token"])
         self.assertEqual("".join(event["content"] for event in events[1:-1]), "Bonjour monde")
-        self.assertEqual(events[-1], {"type": "done"})
+        self.assertEqual(events[-1]["type"], "done")
+        self.assertIn("conversation_id", events[-1])
+        self.assertIn("message_id", events[-1])
 
     def test_non_streaming_mode_returns_json(self) -> None:
         application.engine = StubEngine()
         response = self.client.post("/api/chat", json={"question": "Quel est le préavis ?", "stream": False})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["answer"], "Bonjour monde")
+        self.assertIn("conversation_id", response.json())
         self.assertEqual(len(response.json()["sources"]), 1)
 
     def test_configuration_error_is_503(self) -> None:
