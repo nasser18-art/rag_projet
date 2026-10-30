@@ -49,12 +49,13 @@ git submodule update --init --recursive
 
 ```sh
 python3 docs/design/tools/contrast.py --strict   # contrastes AA des jetons
-python3 docs/design/tools/check_tokens.py        # jetons définis / variantes sombres
+python3 docs/design/tools/check_tokens.py        # jetons définis / variantes sombres / couleurs littérales
 ```
 
 Et pour la vérification fonctionnelle sans navigateur :
 
 ```sh
 mkdir -p /tmp/domtest && cd /tmp/domtest && npm init -y && npm install jsdom@24
-NODE_PATH=/tmp/domtest/node_modules node /chemin/vers/rag_projet/docs/design/tools/frontend-check.js
+cp /chemin/vers/rag_projet/docs/design/tools/ui-check.mjs .
+FRONTEND_DIR=/chemin/vers/rag_projet/frontend node ui-check.mjs
 ```
