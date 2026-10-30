@@ -5,6 +5,7 @@ Application web locale pour interroger le corpus documentaire de l'entreprise. E
 ## Prérequis
 
 - Python 3.11 à 3.13 recommandé (le modèle `sentence-transformers` nécessite PyTorch) ;
+- Node.js 20 ou plus récent, pour compiler l'interface React (`web/`) ;
 - une clé API Groq active ;
 - accès Internet au premier démarrage pour télécharger le modèle d'embeddings si celui-ci n'est pas déjà en cache.
 
@@ -21,15 +22,43 @@ Copy-Item .env.example .env
 
 Ouvrez `.env` et renseignez `GROQ_API_KEY` avec une **nouvelle** clé Groq. La clé précédemment présente dans `09_chatbot.py` doit être révoquée dans Groq puis remplacée.
 
-## Lancer l'application
+## Compiler l'interface puis lancer l'application
 
-Double-cliquez sur `run.bat`, ou exécutez :
+L'interface React doit être compilée une fois (et après chaque modification de `web/`) :
 
 ```powershell
+cd web
+npm ci
+npm run build      # produit web/app-dist (index.html + assets, noms hachés)
+cd ..
 py -m uvicorn app:app --host 127.0.0.1 --port 8000
 ```
 
-Puis ouvrez `http://127.0.0.1:8000`. L'API de santé est disponible sur `GET /api/health`.
+Puis ouvrez `http://127.0.0.1:8000` : FastAPI sert le build React.
+
+- `/` et toutes les routes de l'interface (`/documents`, `/conversations/{id}`)
+  renvoient `web/app-dist/index.html` : **le rafraîchissement du navigateur
+  fonctionne** sur n'importe quelle route ;
+- `/assets/*` sert les fichiers compilés (cache long, noms hachés) ;
+- `/api/*` reste exclusivement réservé à l'API : une route inconnue sous `/api/`
+  répond 404 en JSON, jamais du HTML ;
+- **repli** : si `web/app-dist/index.html` est absent, `/` sert l'ancienne
+  interface `frontend/`. Le choix est refait à chaque requête, donc un build
+  effectué après le démarrage est pris en compte sans redémarrage ;
+- l'ancienne interface reste par ailleurs accessible sous `/static/`
+  (`frontend/` est conservé intact, jamais supprimé) ;
+- `GET /api/health` indique l'interface servie (`"frontend": "react"` ou
+  `"legacy"`), ce qui permet de diagnostiquer un build manquant.
+
+Double-cliquez sur `run.bat` pour le lancement, ou utilisez la commande `uvicorn`
+ci-dessus. L'API de santé reste disponible sur `GET /api/health`.
+
+Alternative de développement (rechargement à chaud, sans compiler) :
+
+```powershell
+cd web
+npm run dev        # http://localhost:5173, /api redirigé vers FastAPI (port 8000)
+```
 
 Le chatbot console reste disponible avec :
 
@@ -135,19 +164,22 @@ conversation vide.
 
 L'interface du template « Nexus AI RAG Workspace » vit dans `web/` (React 19,
 Vite, TypeScript). Elle n'affiche aucune donnée de démonstration : chaque écran
-appelle les routes ci-dessus.
+appelle les routes ci-dessus. Elle est servie par FastAPI après compilation
+(voir « Compiler l'interface »), et en développement par Vite avec un proxy
+`/api` vers FastAPI.
 
 ```sh
 cd web
-npm install
-npm run dev      # http://localhost:5173, /api redirigé vers FastAPI (port 8000)
-npm test         # 13 tests (rendu, formatage, lecture du flux SSE)
-npm run build    # génère web/app-dist
+npm ci
+npm test         # 17 tests (rendu, formatage, flux SSE, routes)
+npm run build    # génère web/app-dist, servi par FastAPI
+npm run dev      # http://localhost:5173, /api redirigé vers 127.0.0.1:8000
 ```
 
-Lancer FastAPI en parallèle (`uvicorn app:app --port 8000`) : le serveur de
-développement Vite redirige `/api` vers `127.0.0.1:8000`, ce qui évite toute
-URL absolue dans le navigateur.
+Les routes de l'interface sont de vraies URL (`/`, `/documents`,
+`/conversations/{id}`) : elles sont écrites avec l'API History du navigateur et
+restent valides après rafraîchissement, puisque le serveur renvoie l'application
+pour tout chemin non réservé à l'API ou aux fichiers statiques.
 
 Correspondance écran → route :
 
@@ -167,19 +199,22 @@ basculement vers `web/app-dist` n'est pas fait ; elle est conservée telle quell
 ## Tests
 
 ```sh
-python -m unittest discover -s tests -t .   # 88 tests
-cd web && npm test                          # 13 tests
+python -m unittest discover -s tests -t .   # 104 tests
+cd web && npm test                          # 17 tests
 ```
 
 Côté Python, sans réseau : extraction des quatre formats, découpage, validation
 d'upload, persistance SQLite, index (recherche, filtre, suppression,
 rechargement), routes documents, conversations et messages, recherche transverse,
-contrat SSE de `/api/chat` avec un moteur bouchonné, citations et provenance, et
-le chemin « modèle d'embeddings absent ».
+contrat SSE de `/api/chat` avec un moteur bouchonné, citations et provenance, le
+chemin « modèle d'embeddings absent », et le service de l'interface (build React,
+assets, rafraîchissement des routes, repli sur `frontend/`, non-régression des
+routes `/api/`).
 
-Côté React : rendu serveur des composants et de l'application complète,
-formatage français, conversions `[n]` → sources, échappement du balisage, et
-analyse du flux SSE reçu en trames partielles.
+Côté React : rendu serveur des composants et de l'application complète (y
+compris la vue Documents ouverte depuis `/documents`), formatage français,
+conversions `[n]` → sources, échappement du balisage, analyse du flux SSE reçu
+en trames partielles et conversion URL ↔ route.
 
 ## Architecture
 

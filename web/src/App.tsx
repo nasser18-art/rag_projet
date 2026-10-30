@@ -10,9 +10,9 @@ import { Sidebar } from './components/Sidebar'
 import { SourcesPanel } from './components/SourcesPanel'
 import { Topbar } from './components/Topbar'
 import { ConfirmDialog, ToastStack, type Notice, type NoticeKind } from './components/ui'
+import { parseRoute, writeRoute, type Route } from './lib/router'
 import { useChat } from './lib/useChat'
 
-type View = 'chat' | 'documents'
 type Theme = 'light' | 'dark'
 
 type Deleting = { kind: 'conversation'; item: Conversation } | { kind: 'document'; item: DocumentRow }
@@ -24,7 +24,8 @@ function initialTheme(): Theme {
 }
 
 export default function App() {
-  const [view, setView] = useState<View>('chat')
+  const [route, setRoute] = useState<Route>(() => parseRoute(window.location.pathname))
+  const view: 'chat' | 'documents' = route.name === 'documents' ? 'documents' : 'chat'
   const [theme, setTheme] = useState<Theme>(initialTheme)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sourcesOpen, setSourcesOpen] = useState(true)
@@ -164,22 +165,43 @@ export default function App() {
   )
   const contextLabel = category ?? 'Toutes les bases'
 
+  const go = useCallback((next: Route, replace = false) => {
+    writeRoute(next, replace)
+    setRoute(next)
+  }, [])
+
   const startNewConversation = useCallback(() => {
     chat.reset()
-    setView('chat')
     setActiveSource(null)
     setSourcesOpen(true)
-  }, [chat])
+    go({ name: 'chat' })
+  }, [chat, go])
 
   const openConversation = useCallback(
     (id: string) => {
-      setView('chat')
       setActiveSource(null)
       setSourcesOpen(true)
-      void chat.load(id)
+      go({ name: 'conversation', id })
     },
-    [chat],
+    [go],
   )
+
+  // L'URL pilote le chargement : un rafraîchissement sur /conversations/{id}
+  // recharge la conversation correspondante.
+  useEffect(() => {
+    if (route.name === 'conversation' && route.id !== chat.activeId) void chat.load(route.id)
+  }, [route, chat.activeId, chat.load])
+
+  // Une conversation créée par le flux est reflétée dans l'URL sans rechargement.
+  useEffect(() => {
+    if (chat.activeId && route.name === 'chat') go({ name: 'conversation', id: chat.activeId }, true)
+  }, [chat.activeId, route, go])
+
+  useEffect(() => {
+    const onPopState = () => setRoute(parseRoute(window.location.pathname))
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
 
   const send = useCallback(() => {
     const question = draft.trim()
@@ -246,7 +268,7 @@ export default function App() {
             'error',
             described.title,
             `${file.name} — ${described.detail || described.title}`,
-            described.retryable ? { label: 'Voir les documents', onClick: () => setView('documents') } : undefined,
+            described.retryable ? { label: 'Voir les documents', onClick: () => go({ name: 'documents' }) } : undefined,
           )
           // Un import en 503 laisse le document enregistré en erreur : on rafraîchit
           // quand même la liste pour que l'état réel soit visible.
@@ -291,7 +313,10 @@ export default function App() {
     try {
       if (deleting.kind === 'conversation') {
         await api.deleteConversation(deleting.item.id)
-        if (chat.activeId === deleting.item.id) chat.reset()
+        if (chat.activeId === deleting.item.id) {
+          chat.reset()
+          go({ name: 'chat' })
+        }
         await refreshConversations()
         pushNotice('success', 'Conversation supprimée.')
       } else {
@@ -309,7 +334,7 @@ export default function App() {
     } finally {
       setDeleteBusy(false)
     }
-  }, [chat, deleting, pushNotice, refreshConversations, refreshDocuments, refreshHealth, refreshKnowledge])
+  }, [chat, deleting, go, pushNotice, refreshConversations, refreshDocuments, refreshHealth, refreshKnowledge])
 
   // --- raccourcis ---------------------------------------------------------
   useEffect(() => {
@@ -337,7 +362,7 @@ export default function App() {
         open={sidebarOpen}
         close={() => setSidebarOpen(false)}
         view={view}
-        onNavigate={setView}
+        onNavigate={(next) => go({ name: next })}
         conversations={conversations}
         activeId={chat.activeId}
         onSelectConversation={openConversation}
@@ -390,7 +415,7 @@ export default function App() {
                 setSourcesOpen(true)
                 setActiveSource(index)
               }}
-              onGoToDocuments={() => setView('documents')}
+              onGoToDocuments={() => go({ name: 'documents' })}
             >
               <Composer
                 value={draft}
@@ -404,7 +429,7 @@ export default function App() {
                 knowledge={knowledge}
                 health={health}
                 onAttach={(file) => {
-                  setView('documents')
+                  go({ name: 'documents' })
                   void uploadFiles([file])
                 }}
               />
@@ -446,10 +471,10 @@ export default function App() {
         <CommandPalette
           onClose={() => setCommandsOpen(false)}
           onNewConversation={startNewConversation}
-          onGoToDocuments={() => setView('documents')}
+          onGoToDocuments={() => go({ name: 'documents' })}
           onSelectConversation={openConversation}
           onOpenDocument={(document) => {
-            setView('documents')
+            go({ name: 'documents' })
             setDetail(document)
           }}
         />

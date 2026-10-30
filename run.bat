@@ -6,5 +6,15 @@ if not exist ".env" (
   pause
   exit /b 1
 )
+if not exist "web\app-dist\index.html" (
+  echo Build de l'interface React absent : compilation dans web/ ...
+  pushd web
+  call npm ci
+  call npm run build
+  popd
+  if not exist "web\app-dist\index.html" (
+    echo Compilation impossible : l'ancienne interface sera servie.
+  )
+)
 py -m uvicorn app:app --host 127.0.0.1 --port 8000
 pause

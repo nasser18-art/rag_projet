@@ -44,7 +44,15 @@ from rag.store import Store, new_id
 
 logging.basicConfig(level=getattr(logging, settings.log_level.upper(), logging.INFO), format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
+
+# Deux interfaces coexistent : l'ancienne (`frontend/`, sans build) est conservée
+# intacte et reste servie en repli ; la nouvelle (`web/`, React) est servie dès
+# que son build existe. Le choix est refait à chaque requête : un `npm run build`
+# effectué après le démarrage est pris en compte sans redémarrage.
 FRONTEND_DIR = PROJECT_ROOT / "frontend"
+REACT_DIST_DIR = PROJECT_ROOT / "web" / "app-dist"
+INDEX_HEADERS = {"Cache-Control": "no-cache"}
+ASSET_HEADERS = {"Cache-Control": "public, max-age=31536000, immutable"}
 
 MEDIA_TYPES = {
     "pdf": "application/pdf",
@@ -74,6 +82,24 @@ app = FastAPI(title="Assistant documentaire interne", docs_url=None, redoc_url=N
 if settings.allowed_origins:
     app.add_middleware(CORSMiddleware, allow_origins=list(settings.allowed_origins), allow_credentials=False, allow_methods=["GET", "POST", "PATCH", "DELETE"], allow_headers=["Content-Type"])
 app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
+
+
+def react_dist() -> Path | None:
+    """Répertoire du build React, s'il est présent."""
+    return REACT_DIST_DIR if (REACT_DIST_DIR / "index.html").is_file() else None
+
+
+def frontend_dir() -> Path:
+    """Interface servie à la racine : le build React, sinon l'ancienne interface."""
+    return react_dist() or FRONTEND_DIR
+
+
+def _inside(root: Path, candidate: Path) -> bool:
+    """Empêche toute sortie de répertoire (traversée de chemin)."""
+    try:
+        return candidate.resolve().is_relative_to(root.resolve())
+    except OSError:
+        return False
 
 
 # --------------------------------------------------------------------------- #
@@ -164,6 +190,7 @@ def health() -> dict:
             "uploads_enabled": True,
             "formats": list(ALLOWED_EXTENSIONS),
             "max_upload_bytes": settings.max_upload_bytes,
+            "frontend": "react" if react_dist() else "legacy",
         }
     )
     return payload
@@ -503,6 +530,51 @@ def search(q: str = "") -> dict:
 # Interface
 # --------------------------------------------------------------------------- #
 
+@app.get("/assets/{asset_path:path}", include_in_schema=False)
+def react_asset(asset_path: str) -> FileResponse:
+    """Fichiers produits par Vite (JS, CSS, polices) : noms hachés, cache long."""
+    dist = react_dist()
+    if dist is None:
+        raise HTTPException(status_code=404, detail="Aucun build React disponible.")
+    assets_root = dist / "assets"
+    candidate = assets_root / asset_path
+    if not candidate.is_file() or not _inside(assets_root, candidate):
+        raise HTTPException(status_code=404, detail="Asset introuvable.")
+    return FileResponse(candidate, headers=ASSET_HEADERS)
+
+
 @app.get("/")
 def index() -> FileResponse:
-    return FileResponse(FRONTEND_DIR / "index.html")
+    """Page d'entrée : build React s'il existe, sinon l'ancienne interface."""
+    entry = frontend_dir() / "index.html"
+    if not entry.is_file():
+        raise HTTPException(
+            status_code=404,
+            detail="Interface indisponible : exécutez « npm run build » dans web/.",
+        )
+    return FileResponse(entry, headers=INDEX_HEADERS)
+
+
+@app.get("/{full_path:path}", include_in_schema=False)
+def frontend_routes(full_path: str) -> FileResponse:
+    """Rafraîchissement des routes de l'interface (ex. /documents, /conversations/{id}).
+
+    Les préfixes réservés à l'API et aux fichiers statiques ne sont jamais
+    interceptés : une route inconnue sous /api/ répond 404 en JSON.
+    """
+    if full_path.startswith(("api/", "static/", "assets/")):
+        raise HTTPException(status_code=404, detail="Not Found")
+
+    dist = react_dist()
+    if dist is not None and full_path:
+        candidate = dist / full_path
+        if candidate.is_file() and _inside(dist, candidate):
+            return FileResponse(candidate)
+
+    entry = frontend_dir() / "index.html"
+    if not entry.is_file():
+        raise HTTPException(
+            status_code=404,
+            detail="Interface indisponible : exécutez « npm run build » dans web/.",
+        )
+    return FileResponse(entry, headers=INDEX_HEADERS)
