@@ -61,6 +61,24 @@ Les scripts de pipeline et l'application web utilisent des chemins relatifs à l
 - `frontend/` : interface HTML/CSS/JavaScript sans CDN ;
 - scripts historiques numérotés : préparation et indexation du corpus.
 
+## Interface et règles de design
+
+Le frontend suit les règles du skill **apple-design** (Human Interface Guidelines),
+versionné dans `.design-rules/` sous forme de sous-module Git. Avant toute modification
+d'interface, lire `.design-rules/SKILL.md` (voir `CLAUDE.md`).
+
+- `docs/design/audit.md` : audit de l'interface, 48 constats avec fichier:ligne et règle du skill ;
+- `docs/design/verification.md` : ce qui a été testé, les contrastes mesurés, les limites ;
+- `docs/design/comparison.html` : avant/après, à ouvrir dans un navigateur (ce ne sont pas des
+  captures d'écran) ;
+- `docs/design/tools/` : mesures rejouables (contrastes, jetons, contrôles fonctionnels).
+
+Après un clone, récupérer le sous-module :
+
+```sh
+git submodule update --init --recursive
+```
+
 ## Limites et suite recommandée
 
 L'application n'inclut pas encore d'authentification, de contrôle d'accès par document, ni de journalisation métier/anonymisée. Pour un déploiement intranet, ajoutez un proxy HTTPS, une authentification SSO, une politique de conservation des logs et un processus de validation/versionnage du corpus.
