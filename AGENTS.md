@@ -1,5 +1,20 @@
 # AGENTS.md
 
+> **Après P1 → P5, deux interfaces coexistent.** `web/` (React 19 + TypeScript +
+> Vite) est l'interface active, compilée par `npm run build` et servie par
+> FastAPI (`/`, `/assets`, routes `/documents` et `/conversations/{id}`).
+> `frontend/` est l'ancienne interface HTML/CSS/JS : elle reste intacte et sert
+> de repli. Les règles « ne pas modifier `app.py` / `rag/` » valaient pour la
+> refonte graphique seule ; elles ne s'appliquent plus aux étapes d'intégration
+> documentées dans `docs/integration/`.
+>
+> Vérifications minimales avant de proposer un changement :
+>
+> ```sh
+> python -m unittest discover -s tests -t .   # API, documents, conversations, frontend
+> cd web && npm test && npm run build         # composants, flux SSE, routes, build
+> ```
+
 Consignes pour tout agent de code travaillant sur ce dépôt (voir aussi `CLAUDE.md`, qui porte les
 mêmes règles).
 

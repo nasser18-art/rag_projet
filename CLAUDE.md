@@ -1,5 +1,24 @@
 # Consignes projet pour les assistants de code
 
+> **État après l'intégration Nexus (P1 → P5)** — les règles ci-dessous décrivent
+> `frontend/`, l'**ancienne** interface, conservée intacte et servie en repli.
+> L'interface active est la nouvelle application React de `web/` (template
+> « Nexus AI RAG Workspace »), et le contrat API a évolué (documents,
+> conversations, feedback, recherche, `category`, `frontend` dans `/api/health`).
+>
+> - Interface active : `web/` (React 19, TypeScript, Vite, Tailwind 4). Ses jetons
+>   sont dans `web/src/index.css` (`--bg`, `--text`, `--blue`, rayons, ombres) ;
+>   tout nouveau style réutilise ces variables.
+> - `app.py` et `rag/` **peuvent** évoluer, mais uniquement de façon documentée :
+>   une étape = un commit, un rapport dans `docs/integration/`, et la suite de
+>   tests verte (`python -m unittest discover -s tests -t .`, `cd web && npm test`).
+> - Les données affichées doivent venir de l'API : aucun contenu de démonstration,
+>   aucun bouton décoratif, aucune erreur masquée.
+> - `frontend/` ne doit **jamais** être supprimé : il reste le repli si
+>   `web/app-dist` est absent (voir README).
+> - Le rendu des réponses passe par `renderAnswer()` (`web/src/lib/format.ts`) :
+>   tout est échappé avant insertion, les renvois `[n]` deviennent des boutons.
+
 ## Règle UI : lire les deux skills Apple avant toute modification d'interface
 
 Deux dépôts **originaux** sont versionnés en sous-modules. Ne jamais les réécrire, les résumer

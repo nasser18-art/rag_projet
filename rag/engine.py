@@ -171,9 +171,16 @@ class RagEngine:
             {"role": "user", "content": f"Extraits numérotés :\n{self._context(sources)}\n\nQuestion : {question}"},
         ]
 
+    def _relevant_enough(self, sources: list[Source]) -> bool:
+        """Un score absent (None) ne vaut pas 0 : il interdit simplement la génération."""
+        if not sources:
+            return False
+        best = sources[0].score
+        return best is not None and best >= self.config.min_relevance_score
+
     def answer(self, question: str, category: str | None = None) -> tuple[str, list[Source]]:
         sources = self.search(question, category=category)
-        if not sources or sources[0].score < self.config.min_relevance_score:
+        if not self._relevant_enough(sources):
             return "Je ne trouve pas cette information dans les documents fournis.", []
         try:
             response = self._get_client().chat.completions.create(model=self.config.groq_model, messages=self._messages(question, sources), temperature=0.1)
@@ -186,7 +193,7 @@ class RagEngine:
 
     def stream_answer(self, question: str, category: str | None = None) -> tuple[Iterator[str], list[Source]]:
         sources = self.search(question, category=category)
-        if not sources or sources[0].score < self.config.min_relevance_score:
+        if not self._relevant_enough(sources):
             return iter(["Je ne trouve pas cette information dans les documents fournis."]), []
         try:
             completion = self._get_client().chat.completions.create(model=self.config.groq_model, messages=self._messages(question, sources), temperature=0.1, stream=True)

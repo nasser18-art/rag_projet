@@ -86,6 +86,13 @@ describe('rendu des réponses', () => {
     expect(html).toContain('Aucun extrait ne correspond à ce renvoi.')
   })
 
+  it('échappe le nom d’un document hostile dans l’infobulle', () => {
+    const hostile = [{ ...sources[0], document: '<img src=x onerror=alert(1)>' }]
+    const html = renderAnswer('Voir [1].', hostile)
+    expect(html).not.toContain('<img')
+    expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;')
+  })
+
   it('échappe le balisage du modèle', () => {
     const html = renderAnswer('<script>alert(1)</script> **gras**', sources)
     expect(html).not.toContain('<script>')
