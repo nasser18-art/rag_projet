@@ -160,7 +160,9 @@ export function Sidebar({
       <div className="profile">
         <span className={`status-dot ${health?.knowledge_base_ready ? 'green' : healthError ? 'amber' : 'blue'}`} />
         <span>
-          <strong>{healthError ? 'Serveur injoignable' : health?.knowledge_base_ready ? 'Base prête' : 'Base incomplète'}</strong>
+          <strong>
+            {healthError ? 'Serveur injoignable' : !health ? 'Connexion au serveur…' : health.knowledge_base_ready ? 'Base prête' : 'Base incomplète'}
+          </strong>
           <small>
             {healthError
               ? healthError

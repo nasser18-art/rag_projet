@@ -213,6 +213,14 @@ export default function App() {
         window.open(`/api/documents/${resolved.document_id}/file`, '_blank', 'noopener')
       } catch (error) {
         const described = describeError(error)
+        if (error instanceof ApiError && error.status === 503) {
+          pushNotice(
+            'info',
+            'Extrait archivé',
+            'Ce passage provient d’un index qui n’est plus disponible : le document original ne peut plus être ouvert.',
+          )
+          return
+        }
         pushNotice('error', described.title, described.detail)
       }
     },
@@ -314,6 +322,7 @@ export default function App() {
         setCommandsOpen(false)
         setSidebarOpen(false)
         setDetail(null)
+        setDeleting(null)
       }
     }
     window.addEventListener('keydown', onKeyDown)
@@ -366,7 +375,6 @@ export default function App() {
             <ChatView
               title={activeConversation?.title ?? null}
               messages={chat.messages}
-              sources={chat.sources}
               streaming={chat.streaming}
               loading={chat.loading}
               loadError={chat.loadError}

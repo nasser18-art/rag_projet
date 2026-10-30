@@ -131,17 +131,55 @@ la route répond 404 sans rien écrire. Le flux SSE renvoie `conversation_id` da
 `sources` et dans `done` (avec `message_id`). Un échec du moteur ne laisse aucune
 conversation vide.
 
+## Interface React (Nexus)
+
+L'interface du template « Nexus AI RAG Workspace » vit dans `web/` (React 19,
+Vite, TypeScript). Elle n'affiche aucune donnée de démonstration : chaque écran
+appelle les routes ci-dessus.
+
+```sh
+cd web
+npm install
+npm run dev      # http://localhost:5173, /api redirigé vers FastAPI (port 8000)
+npm test         # 13 tests (rendu, formatage, lecture du flux SSE)
+npm run build    # génère web/app-dist
+```
+
+Lancer FastAPI en parallèle (`uvicorn app:app --port 8000`) : le serveur de
+développement Vite redirige `/api` vers `127.0.0.1:8000`, ce qui évite toute
+URL absolue dans le navigateur.
+
+Correspondance écran → route :
+
+| Interface | Route |
+| --- | --- |
+| historique, bases de connaissances | `GET /api/conversations`, `GET /api/knowledge-bases` |
+| question / réponse en flux | `POST /api/chat` (`stream: true`) |
+| renvois `[n]`, « ouvrir le document » | `sources[]` du flux, `GET /api/sources/{id}`, `GET /api/documents/{id}/file` |
+| retour d'usage | `POST /api/messages/{id}/feedback` |
+| documents : import, filtres, détail, réindexation, suppression | `GET/POST /api/documents`, `/reindex`, `/file`, `DELETE` |
+| palette ⌘K | `GET /api/search?q=` |
+| état du service | `GET /api/health` |
+
+L'ancienne interface `frontend/` reste en place et servie par FastAPI tant que le
+basculement vers `web/app-dist` n'est pas fait ; elle est conservée telle quelle.
+
 ## Tests
 
 ```sh
-python -m unittest discover -s tests -t .
+python -m unittest discover -s tests -t .   # 88 tests
+cd web && npm test                          # 13 tests
 ```
 
-81 tests, sans réseau : extraction des quatre formats, découpage, validation
+Côté Python, sans réseau : extraction des quatre formats, découpage, validation
 d'upload, persistance SQLite, index (recherche, filtre, suppression,
 rechargement), routes documents, conversations et messages, recherche transverse,
-contrat SSE de `/api/chat` avec un moteur bouchonné, et le chemin « modèle
-d'embeddings absent ».
+contrat SSE de `/api/chat` avec un moteur bouchonné, citations et provenance, et
+le chemin « modèle d'embeddings absent ».
+
+Côté React : rendu serveur des composants et de l'application complète,
+formatage français, conversions `[n]` → sources, échappement du balisage, et
+analyse du flux SSE reçu en trames partielles.
 
 ## Architecture
 
@@ -152,7 +190,8 @@ d'embeddings absent ».
 - `rag/store.py` : persistance SQLite (documents, conversations, messages) ;
 - `rag/config.py` : configuration et chemins ;
 - `app.py` : API FastAPI et service des fichiers web ;
-- `frontend/` : interface actuelle (HTML/CSS/JS, sans CDN) ;
+- `frontend/` : ancienne interface (HTML/CSS/JS, sans CDN), conservée pour référence ;
+- `web/` : interface React/Vite connectée à l'API ;
 - `tests/` : suite de tests sans réseau ;
 - scripts historiques numérotés : préparation et indexation du corpus d'origine.
 

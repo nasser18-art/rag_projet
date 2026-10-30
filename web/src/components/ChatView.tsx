@@ -1,12 +1,11 @@
 import { Clipboard, RefreshCw, ThumbsDown, ThumbsUp } from 'lucide-react'
-import type { Health, Message, Source } from '../api/types'
+import type { Health, Message } from '../api/types'
 import { renderAnswer } from '../lib/format'
 import { Banner, EmptyState, IconButton, Spinner } from './ui'
 
 type Props = {
   title: string | null
   messages: Message[]
-  sources: Source[]
   streaming: boolean
   loading: boolean
   loadError: { title: string; detail: string } | null
@@ -26,7 +25,6 @@ type Props = {
 export function ChatView({
   title,
   messages,
-  sources,
   streaming,
   loading,
   loadError,
