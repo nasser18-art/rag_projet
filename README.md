@@ -53,13 +53,76 @@ py 07_embeddings.py
 
 Les scripts de pipeline et l'application web utilisent des chemins relatifs à la racine du projet.
 
+## Base documentaire (import, indexation, suppression)
+
+Depuis P1, les documents s'importent directement par l'application (ou par
+l'API) : plus besoin de relancer les quatre scripts. Les scripts historiques
+restent disponibles pour la base déjà constituée.
+
+### Formats réellement pris en charge
+
+**PDF, DOCX, CSV, XLSX** — 25 Mo maximum par fichier, configurables.
+
+| Format | Extraction | Provenance affichée |
+|---|---|---|
+| PDF | pypdf, page par page | `Page n` |
+| DOCX | python-docx (paragraphes + tableaux) | `Document` |
+| CSV | bibliothèque standard, séparateur détecté | `Tableau` |
+| XLSX | openpyxl, feuille par feuille | `Feuille <nom>` |
+
+Un PDF sans couche texte (document scanné) est refusé en 422 : aucun OCR n'est
+embarqué, et l'interface ne doit pas prétendre le contraire.
+
+### Routes
+
+| Méthode | Route | Rôle |
+|---|---|---|
+| GET | `/api/documents` | liste, filtres `?status=&q=&category=` |
+| POST | `/api/documents` | import multipart (`file`, `category`) |
+| DELETE | `/api/documents/{id}` | retire le document, ses chunks et ses vecteurs |
+| POST | `/api/documents/{id}/reindex` | réindexe depuis le fichier conservé |
+| GET | `/api/documents/{id}/file` | sert l'original (aperçu / téléchargement) |
+| GET | `/api/knowledge-bases` | catégories et compteurs |
+| GET | `/api/health` | état + nombre de documents et de chunks |
+
+Codes d'erreur : `409` doublon (même empreinte SHA-256), `413` trop volumineux,
+`415` format ou signature invalide, `422` fichier vide ou illisible, `503`
+modèle d'embeddings indisponible.
+
+### Données locales
+
+Tout est écrit dans `data/` (ignoré par Git) :
+
+- `data/rag.db` : SQLite — documents, conversations, messages ;
+- `data/index/<document_id>.json` + `.npy` : chunks et vecteurs par document ;
+- `data/documents/<document_id>.<ext>` : fichiers originaux conservés pour l'aperçu.
+
+L'index est rechargé automatiquement quand un document est ajouté ou supprimé :
+aucun redémarrage n'est nécessaire.
+
+## Tests
+
+```sh
+python -m unittest discover -s tests -t .
+```
+
+70 tests, sans réseau : extraction des quatre formats, découpage, validation
+d'upload, persistance SQLite, index (recherche, filtre, suppression,
+rechargement), routes documents, contrat SSE de `/api/chat` avec un moteur
+bouchonné, et le chemin « modèle d'embeddings absent ».
+
 ## Architecture
 
-- `rag/engine.py` : moteur RAG réutilisable (recherche, génération, sources) ;
+- `rag/engine.py` : moteur RAG (recherche, génération, sources) — lit l'index
+  par document quand il existe, sinon les artefacts historiques ;
+- `rag/index.py` : index vectoriel rechargeable, un fichier par document ;
+- `rag/documents.py` : validation, extraction, nettoyage, découpage ;
+- `rag/store.py` : persistance SQLite (documents, conversations, messages) ;
 - `rag/config.py` : configuration et chemins ;
 - `app.py` : API FastAPI et service des fichiers web ;
-- `frontend/` : interface HTML/CSS/JavaScript sans CDN ;
-- scripts historiques numérotés : préparation et indexation du corpus.
+- `frontend/` : interface actuelle (HTML/CSS/JS, sans CDN) ;
+- `tests/` : suite de tests sans réseau ;
+- scripts historiques numérotés : préparation et indexation du corpus d'origine.
 
 ## Interface et règles de design
 
