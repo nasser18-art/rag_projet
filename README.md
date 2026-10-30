@@ -100,16 +100,35 @@ Tout est écrit dans `data/` (ignoré par Git) :
 L'index est rechargé automatiquement quand un document est ajouté ou supprimé :
 aucun redémarrage n'est nécessaire.
 
+## Conversations
+
+| Méthode | Route | Rôle |
+|---|---|---|
+| GET | `/api/conversations` | liste, triée par activité |
+| POST | `/api/conversations` | création (`title`, `category`) |
+| GET | `/api/conversations/{id}` | messages + sources |
+| PATCH | `/api/conversations/{id}` | renommage |
+| DELETE | `/api/conversations/{id}` | suppression (messages en cascade) |
+| POST | `/api/messages/{id}/feedback` | `up`, `down` ou `null` |
+| GET | `/api/search?q=` | conversations + documents (palette ⌘K) |
+
+`POST /api/chat` accepte `conversation_id` (facultatif) : sans lui, une
+conversation est créée et titrée avec la question ; avec un identifiant inconnu,
+la route répond 404 sans rien écrire. Le flux SSE renvoie `conversation_id` dans
+`sources` et dans `done` (avec `message_id`). Un échec du moteur ne laisse aucune
+conversation vide.
+
 ## Tests
 
 ```sh
 python -m unittest discover -s tests -t .
 ```
 
-70 tests, sans réseau : extraction des quatre formats, découpage, validation
+81 tests, sans réseau : extraction des quatre formats, découpage, validation
 d'upload, persistance SQLite, index (recherche, filtre, suppression,
-rechargement), routes documents, contrat SSE de `/api/chat` avec un moteur
-bouchonné, et le chemin « modèle d'embeddings absent ».
+rechargement), routes documents, conversations et messages, recherche transverse,
+contrat SSE de `/api/chat` avec un moteur bouchonné, et le chemin « modèle
+d'embeddings absent ».
 
 ## Architecture
 
