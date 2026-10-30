@@ -1,6 +1,7 @@
 .env
 .conda/
 __pycache__/
+documents/
 *.py[cod]
 .pytest_cache/
 .mypy_cache/
