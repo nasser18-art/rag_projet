@@ -417,7 +417,10 @@ async function runAnswer(question, { retry = false } = {}) {
   } finally {
     state.controller = null;
     setBusy(false);
-    dom.input.focus({ preventScroll: true });
+    // Après un échec, le focus reste sur l'action de reprise : le ramener au
+    // champ effacerait l'erreur que l'utilisateur vient de lire
+    // (feedback.md › Make sure all feedback is accessible).
+    if (!failed) dom.input.focus({ preventScroll: true });
   }
 }
 

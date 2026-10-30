@@ -165,13 +165,14 @@ check('clavier : Entrée envoie', $$('.msg--user').length === 2, String($$('.msg
 /* chemin 503 */
 chatMode = '503';
 input.value = 'Question sans backend';
+$('#new-chat').focus();
 input.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
 await tick(220);
 const errorBlock = $('.msg--assistant:last-of-type .error') ?? $('.error');
 check('erreur : bloc affiché', errorBlock !== null);
 check('erreur : titre 503', $('.error__title')?.textContent.includes('pas encore configuré'), $('.error__title')?.textContent);
 check('erreur : action de reprise', $('.error .btn') !== null);
-check('erreur : pas vol de focus', true);
+check('erreur : le focus reste sur l’élément courant', window.document.activeElement.id === 'new-chat', window.document.activeElement.id);
 
 /* nouvelle conversation */
 $('#new-chat').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
