@@ -13,3 +13,8 @@ textes_propres/*.txt
 
 # Base documentaire locale (SQLite, index, fichiers importés)
 data/
+
+# Interface React (Vite) : dépendances et sorties de build
+web/node_modules/
+web/app-dist/
+web/dist/
