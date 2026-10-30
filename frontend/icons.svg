@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <!--
+    Sprite d'icônes du projet — dessiné pour ce produit, aucun asset Apple.
+    Traits de 1,7 px sur une grille de 24, extrémités arrondies, pour s'aligner
+    optiquement sur le texte de 17 px (icônes.md › Best practices : un seul
+    langage visuel, poids cohérent avec le texte adjacent).
+    Usage : <svg class="icon"><use href="/static/icons.svg#i-send"></use></svg>
+  -->
+  <defs>
+    <g id="stroke-defaults" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <symbol id="i-send" viewBox="0 0 24 24">
+      <path d="M12 19V5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+      <path d="M5.5 11.5 12 5l6.5 6.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+
+    <symbol id="i-stop" viewBox="0 0 24 24">
+      <rect x="7" y="7" width="10" height="10" rx="2.5" fill="currentColor"/>
+    </symbol>
+
+    <symbol id="i-plus" viewBox="0 0 24 24">
+      <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+    </symbol>
+
+    <symbol id="i-history" viewBox="0 0 24 24">
+      <path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+      <path d="M3.2 4.6v4.2h4.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M12 8.2V12l2.8 1.7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+
+    <symbol id="i-close" viewBox="0 0 24 24">
+      <path d="M6.5 6.5l11 11M17.5 6.5l-11 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    </symbol>
+
+    <symbol id="i-copy" viewBox="0 0 24 24">
+      <rect x="9" y="9" width="10.5" height="10.5" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/>
+      <path d="M15 6.2V5.6A2.1 2.1 0 0 0 12.9 3.5H5.6A2.1 2.1 0 0 0 3.5 5.6v7.3A2.1 2.1 0 0 0 5.6 15h.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    </symbol>
+
+    <symbol id="i-check" viewBox="0 0 24 24">
+      <path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+
+    <symbol id="i-doc" viewBox="0 0 24 24">
+      <path d="M13.5 3.5H7.2A2.2 2.2 0 0 0 5 5.7v12.6a2.2 2.2 0 0 0 2.2 2.2h9.6a2.2 2.2 0 0 0 2.2-2.2V9.2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="M13.4 3.7V9.3h5.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="M8.6 13.4h6.8M8.6 16.6h4.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    </symbol>
+
+    <symbol id="i-arrow" viewBox="0 0 24 24">
+      <path d="M5 12h13M12.5 5.8 18.8 12l-6.3 6.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+
+    <symbol id="i-calendar" viewBox="0 0 24 24">
+      <rect x="4" y="6" width="16" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+      <path d="M8 3.8v3.4M16 3.8v3.4M4 10.6h16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    </symbol>
+
+    <symbol id="i-globe" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="8.3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+      <path d="M3.8 12h16.4M12 3.7c2.4 2.3 3.6 5.2 3.6 8.3S14.4 18 12 20.3C9.6 18 8.4 15.1 8.4 12S9.6 6 12 3.7z" fill="none" stroke="currentColor" stroke-width="1.4"/>
+    </symbol>
+
+    <symbol id="i-home" viewBox="0 0 24 24">
+      <path d="M4.5 10.6 12 4l7.5 6.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M6.4 9.6v8.2a1.8 1.8 0 0 0 1.8 1.8h7.6a1.8 1.8 0 0 0 1.8-1.8V9.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+
+    <symbol id="i-receipt" viewBox="0 0 24 24">
+      <path d="M6 3.8h12v16.4l-3-1.7-3 1.7-3-1.7-3 1.7z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="M9 8.6h6M9 12.2h6M9 15.6h3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    </symbol>
+
+    <symbol id="i-alert" viewBox="0 0 24 24">
+      <path d="M12 4.6 21 19.4H3z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+      <path d="M12 10v3.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      <circle cx="12" cy="16.6" r="1.05" fill="currentColor"/>
+    </symbol>
+
+    <symbol id="i-refresh" viewBox="0 0 24 24">
+      <path d="M20 12a8 8 0 1 1-2.4-5.7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+      <path d="M20.4 4.6v4.6h-4.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+  </defs>
+</svg>

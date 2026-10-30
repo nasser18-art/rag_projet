@@ -2,45 +2,143 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light dark">
   <title>Assistant documentaire</title>
-  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/static/css/tokens.css">
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="/static/css/components.css">
 </head>
 <body>
-  <div class="app-shell">
-    <aside class="sidebar" aria-label="Conversations">
-      <div class="brand"><span class="brand-mark">◈</span><span>Assistant documentaire</span></div>
-      <button id="new-chat" class="new-chat">＋ Nouvelle conversation</button>
-      <nav id="history" class="history" aria-label="Historique de la session"></nav>
-      <div class="sidebar-bottom"><button id="theme-toggle" class="quiet-button" aria-label="Activer le thème sombre">◐ <span>Thème</span></button></div>
-    </aside>
-    <main class="main">
-      <header class="mobile-header"><button id="mobile-new-chat" class="icon-button" aria-label="Nouvelle conversation">＋</button><span>Assistant documentaire</span><button id="mobile-theme" class="icon-button" aria-label="Changer le thème">◐</button></header>
-      <section id="chat" class="chat" aria-live="polite" aria-label="Conversation">
-        <div id="welcome" class="welcome">
-          <div class="welcome-icon">◈</div>
-          <h1>Comment puis-je vous aider&nbsp;?</h1>
-          <p>Je réponds à partir des documents internes disponibles.</p>
-          <div class="examples" aria-label="Exemples de questions">
-            <button data-question="Quelles sont les règles d'utilisation d'internet au travail ?">Règles d’utilisation d’internet</button>
-            <button data-question="Comment demander un congé ?">Demander un congé</button>
-            <button data-question="Quelle est la procédure de télétravail ?">Procédure de télétravail</button>
-            <button data-question="Comment valider une dépense ?">Valider une dépense</button>
+  <a class="skip-link" href="#question">Aller à la zone de question</a>
+
+  <div class="app">
+    <!-- Couche flottante supérieure : verre (liquid-glass.md › Recipe 1).
+         Le verre ne recouvre jamais le contenu : le fil passe dessous. -->
+    <header class="topbar glass" id="topbar">
+      <div class="topbar__brand">
+        <span class="topbar__mark" aria-hidden="true">
+          <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#i-doc"></use></svg>
+        </span>
+        <span class="topbar__title">Assistant documentaire</span>
+      </div>
+
+      <!-- État du service : couleur + texte, jamais la couleur seule
+           (accessibility.md › Vision). -->
+      <p class="status-pill" id="status" data-state="loading" role="status" aria-live="polite">
+        <span class="status-pill__dot" aria-hidden="true"></span>
+        <span class="status-pill__label" id="status-label">Vérification…</span>
+      </p>
+
+      <div class="topbar__actions">
+        <button class="icon-btn" id="open-history" type="button"
+                aria-label="Historique des questions" aria-haspopup="dialog">
+          <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#i-history"></use></svg>
+        </button>
+        <button class="btn btn--glass" id="new-chat" type="button">
+          <svg class="icon icon--sm" aria-hidden="true"><use href="/static/icons.svg#i-plus"></use></svg>
+          <span>Nouvelle conversation</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="main" id="main">
+      <div class="column">
+        <section class="welcome" id="welcome" aria-labelledby="welcome-title">
+          <p class="welcome__kicker">
+            <svg class="icon icon--sm" aria-hidden="true"><use href="/static/icons.svg#i-doc"></use></svg>
+            Corpus interne
+          </p>
+          <h1 class="welcome__title" id="welcome-title">Comment puis-je vous aider&nbsp;?</h1>
+          <p class="welcome__lede">Je réponds uniquement à partir des documents indexés, et chaque réponse montre ses sources.</p>
+
+          <div class="suggestions" aria-label="Exemples de questions">
+            <button class="suggestion" type="button" data-question="Comment demander un congé ?">
+              <span class="suggestion__glyph" aria-hidden="true">
+                <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#i-calendar"></use></svg>
+              </span>
+              <span class="suggestion__text">
+                <span class="suggestion__title">Demander un congé</span>
+                <span class="suggestion__hint">Procédure et formulaire</span>
+              </span>
+            </button>
+
+            <button class="suggestion" type="button" data-question="Quelles sont les règles d'utilisation d'internet au travail ?">
+              <span class="suggestion__glyph" aria-hidden="true">
+                <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#i-globe"></use></svg>
+              </span>
+              <span class="suggestion__text">
+                <span class="suggestion__title">Règles d’internet</span>
+                <span class="suggestion__hint">Usage professionnel</span>
+              </span>
+            </button>
+
+            <button class="suggestion" type="button" data-question="Quelle est la procédure de télétravail ?">
+              <span class="suggestion__glyph" aria-hidden="true">
+                <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#i-home"></use></svg>
+              </span>
+              <span class="suggestion__text">
+                <span class="suggestion__title">Télétravail</span>
+                <span class="suggestion__hint">Conditions et validation</span>
+              </span>
+            </button>
+
+            <button class="suggestion" type="button" data-question="Comment valider une dépense ?">
+              <span class="suggestion__glyph" aria-hidden="true">
+                <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#i-receipt"></use></svg>
+              </span>
+              <span class="suggestion__text">
+                <span class="suggestion__title">Valider une dépense</span>
+                <span class="suggestion__hint">Note de frais</span>
+              </span>
+            </button>
           </div>
-        </div>
-      </section>
-      <div class="composer-wrap">
-        <form id="composer" class="composer">
-          <label class="sr-only" for="question">Votre question</label>
-          <textarea id="question" rows="1" maxlength="4000" placeholder="Posez votre question sur les documents internes…" autofocus></textarea>
-          <button id="send" type="submit" aria-label="Envoyer la question"><span>↑</span></button>
-        </form>
-        <p class="hint">Entrée pour envoyer · Maj + Entrée pour un retour à la ligne</p>
+        </section>
+
+        <section class="thread" id="thread" aria-label="Conversation"></section>
       </div>
     </main>
   </div>
-  <template id="message-template"><article class="message"><div class="avatar"></div><div class="message-content"><div class="message-toolbar"><span class="sender"></span><button class="copy quiet-button" aria-label="Copier la réponse">Copier</button></div><div class="markdown"></div><div class="sources"></div></div></article></template>
-  <script src="/static/app.js"></script>
+
+  <!-- Couche flottante inférieure : capsule de saisie en verre. -->
+  <div class="composer-wrap">
+    <form class="composer glass" id="composer" autocomplete="off">
+      <label class="sr-only" for="question">Votre question</label>
+      <textarea id="question" class="composer__input" rows="1" maxlength="4000"
+                placeholder="Posez votre question sur les documents internes…"
+                aria-describedby="composer-hint"></textarea>
+      <button class="composer__stop" id="stop" type="button" hidden aria-label="Arrêter la génération">
+        <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#i-stop"></use></svg>
+      </button>
+      <button class="composer__send" id="send" type="submit" aria-label="Envoyer la question">
+        <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#i-send"></use></svg>
+      </button>
+    </form>
+    <div class="composer__meta">
+      <p id="composer-hint">Entrée pour envoyer · Maj + Entrée pour un retour à la ligne</p>
+      <p class="composer__count" id="count" hidden aria-hidden="true"></p>
+    </div>
+  </div>
+
+  <!-- Feuille latérale (sources ou historique) : verre épais, poignée, glisser. -->
+  <button class="scrim" id="scrim" type="button" tabindex="-1" aria-hidden="true" hidden></button>
+  <section class="sheet glass--thick" id="sheet" role="dialog" aria-modal="true"
+           aria-labelledby="sheet-title" data-open="false" hidden>
+    <div class="sheet__grabber" id="sheet-grabber" aria-hidden="true"></div>
+    <header class="sheet__head">
+      <div class="sheet__titles">
+        <p class="sheet__kicker" id="sheet-kicker">Source</p>
+        <h2 class="sheet__title" id="sheet-title">Document</h2>
+      </div>
+      <button class="icon-btn" id="sheet-close" type="button" aria-label="Fermer">
+        <svg class="icon" aria-hidden="true"><use href="/static/icons.svg#i-close"></use></svg>
+      </button>
+    </header>
+    <div class="sheet__body" id="sheet-body"></div>
+  </section>
+
+  <p class="sr-only" id="live" role="status" aria-live="polite"></p>
+
+  <script type="module" src="/static/js/app.js"></script>
 </body>
 </html>

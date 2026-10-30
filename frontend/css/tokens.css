@@ -1,0 +1,288 @@
+/* ============================================================================
+   Jetons de design — Assistant documentaire
+   ----------------------------------------------------------------------------
+   Cette couche est la seule source de vérité pour les couleurs, la typographie,
+   les espacements, les rayons, les ombres, les matériaux et le mouvement.
+   Aucun composant ne doit écrire une valeur en dur.
+
+   Structure et vocabulaire : `.claude/skills/apple-design-web/references/tokens.md`
+   et `assets/tokens.css` (constructeur). Valeurs de couleur : brief produit,
+   recalculées par `docs/design/tools/contrast.py`.
+
+   Registre :
+     - typographie   → échelle SF du constructeur (sf text styles)
+     - couleur       → 8 valeurs nommées, chacune avec sa variante sombre
+     - matériaux     → teinte + flou + saturation (liquid-glass.md › Recipe 1)
+     - mouvement     → durées + courbes + ressort linear() (motion-physics.md)
+
+   Interdits (brief) :
+     - #86868B n'est JAMAIS une couleur de texte : 3,62:1 sur blanc.
+     - Blanc sur #0A84FF (3,65:1) uniquement pour une icône, jamais pour du texte.
+   ========================================================================== */
+
+:root {
+  color-scheme: light dark;
+
+  /* ==== Typographie ====================================================== */
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "SF Mono", ui-monospace, SFMono-Regular, Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  /* Échelle SF : la taille, le poids et l'interligne vont ensemble
+     (typography.md › 4. Hierarchy = weight + size + leading as a *set*). */
+  --text-large-title: 2.125rem;  /* 34 px */
+  --text-title-1: 1.75rem;       /* 28 px */
+  --text-title-2: 1.375rem;      /* 22 px */
+  --text-title-3: 1.25rem;       /* 20 px */
+  --text-headline: 1.0625rem;    /* 17 px, semibold */
+  --text-body: 1.0625rem;        /* 17 px */
+  --text-callout: 1rem;          /* 16 px */
+  --text-subhead: 0.9375rem;     /* 15 px */
+  --text-footnote: 0.8125rem;    /* 13 px */
+  --text-caption: 0.75rem;       /* 12 px */
+
+  /* Tracking : se resserre quand la taille augmente (typography.md › 2).
+     Un seul letter-spacing global est le « tell » n°1 d'un site non-Apple. */
+  --tracking-tight: -0.022em;    /* display */
+  --tracking-snug: -0.014em;     /* titres */
+  --tracking-normal: 0em;        /* corps */
+  --tracking-wide: 0.01em;       /* petit texte */
+
+  /* Leading : s'ouvre quand la taille diminue (typography.md › 3). */
+  --leading-tight: 1.05;
+  --leading-snug: 1.2;
+  --leading-normal: 1.35;
+  --leading-relaxed: 1.5;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* ==== Espacements : grille 4/8 pt ====================================== */
+
+  --space-1: 0.125rem;  /*  2 */
+  --space-2: 0.25rem;   /*  4 */
+  --space-3: 0.5rem;    /*  8 */
+  --space-4: 0.75rem;   /* 12 */
+  --space-5: 1rem;      /* 16 */
+  --space-6: 1.25rem;   /* 20 */
+  --space-7: 1.5rem;    /* 24 */
+  --space-8: 2rem;      /* 32 */
+  --space-9: 2.5rem;    /* 40 */
+  --space-10: 3rem;     /* 48 */
+  --space-12: 4rem;     /* 64 */
+
+  /* ==== Rayons : échelle continue 10/14/20/28/capsule ==================== */
+  /* (tokens.md › Continuous corners — approximation web du squircle.) */
+
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-capsule: 999px;
+
+  /* ==== Élévation : deux couches, jamais une ombre seule ================= */
+  /* (tokens.md › Why two-layer shadows?) */
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 1px rgba(0, 0, 0, 0.06);
+  --shadow-2: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-3: 0 8px 24px rgba(0, 0, 0, 0.10), 0 2px 6px rgba(0, 0, 0, 0.08);
+  --shadow-4: 0 16px 48px rgba(0, 0, 0, 0.14), 0 4px 12px rgba(0, 0, 0, 0.10);
+  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.18);
+
+  /* ==== Couleur — apparence claire ====================================== */
+
+  --bg: #f5f5f7;
+  --bg-surface: #ffffff;
+  --bg-elevated: #ffffff;
+
+  --label: #1d1d1f;            /* 15,46:1 sur --bg, 16,83:1 sur --bg-surface */
+  --label-secondary: #6e6e73;  /*  4,66:1 sur --bg,  5,07:1 sur --bg-surface */
+
+  --accent: #0066cc;           /*  5,11:1 sur --bg,  5,57:1 sur --bg-surface */
+  --accent-fill: #0066cc;      /* aplat : blanc dessus = 5,57:1 */
+  --on-accent-fill: #ffffff;
+  --accent-tint: rgba(0, 102, 204, 0.12);
+
+  --danger: #d70015;           /*  5,38:1 sur blanc */
+  --danger-fill: #d70015;
+  --danger-tint: rgba(215, 0, 21, 0.10);
+  --status-ok: #248a3d;        /* pastille non textuelle, 4,40:1 */
+  --status-warn: #9a5b00;
+
+  --separator: rgba(60, 60, 67, 0.29);
+  --separator-opaque: #c6c6c8;
+  --scrim: rgba(0, 0, 0, 0.32);
+  --grabber: #8e8e93;          /* 3,54:1 sur blanc : affordance non textuelle */
+
+  --fill-1: rgba(120, 120, 128, 0.20);
+  --fill-2: rgba(120, 120, 128, 0.16);
+  --fill-3: rgba(120, 120, 128, 0.12);
+  --fill-4: rgba(120, 120, 128, 0.08);
+
+  /* Lavis de fond : donne au verre des variations de luminance à réfracter
+     (liquid-glass.md › The mental model). Un seul registre, pas d'arc-en-ciel. */
+  --wash-1: rgba(0, 102, 204, 0.10);
+  --wash-2: rgba(90, 200, 250, 0.12);
+
+  /* ==== Matériaux : teinte + flou + saturation ========================== */
+  /* (liquid-glass.md › Thickness → numbers) */
+
+  --material-thin-tint: rgba(255, 255, 255, 0.60);
+  --material-regular-tint: rgba(255, 255, 255, 0.72);
+  --material-thick-tint: rgba(255, 255, 255, 0.84);
+  --material-blur: 20px;
+  --material-blur-thick: 32px;
+  --material-saturate: 180%;
+
+  /* Reflet spéculaire + filet : la ligne qui sépare « Apple 2025 » de
+     « glassmorphism 2020 » (liquid-glass.md › Recipe 1). */
+  --glass-specular: rgba(255, 255, 255, 0.55);
+  --glass-inner-rim: rgba(255, 255, 255, 0.18);
+  --glass-outer-rim: rgba(0, 0, 0, 0.06);
+
+  /* ==== Mouvement ======================================================= */
+
+  --duration-instant: 100ms;
+  --duration-fast: 200ms;
+  --duration-base: 300ms;
+  --duration-slow: 450ms;
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* Ressort amorti (ζ = 0,78, ω = 18 rad/s, réponse ≈ 300 ms) échantillonné
+     en `linear()` : 2 % de dépassement, puis retour au repos.
+     Cf. `apple-design-web/references/motion-physics.md §1` (damping/response)
+     et la valeur de livraison Apple « sheet/drawer : damping 0,8 / response 0,3 ». */
+  --ease-spring: linear(
+    0, 0.023 4.2%, 0.08 8.3%, 0.159 12.5%, 0.251 16.7%, 0.348 20.8%,
+    0.443 25%, 0.534 29.2%, 0.618 33.3%, 0.693 37.5%, 0.759 41.7%,
+    0.816 45.8%, 0.864 50%, 0.903 54.2%, 0.935 58.3%, 0.96 62.5%,
+    0.98 66.7%, 0.994 70.8%, 1.005 75%, 1.012 79.2%, 1.016 83.3%,
+    1.019 87.5%, 1.02 91.7%, 1.02 95.8%, 1 100%
+  );
+
+  /* ==== Dimensions ====================================================== */
+
+  --measure: 720px;       /* colonne de contenu et composeur */
+  --tap: 44px;            /* cible tactile minimale (accessibility.md › Mobility) */
+  --topbar-h: 64px;
+  --rail-card: 232px;     /* largeur d'une carte-document dans le rail */
+  --sheet-max: 88dvh;
+
+  /* ==== Profondeurs ===================================================== */
+
+  --z-wash: 0;
+  --z-content: 1;
+  --z-topbar: 50;
+  --z-composer: 60;
+  --z-scrim: 80;
+  --z-sheet: 90;
+  --z-toast: 100;
+}
+
+/* ==== Apparence sombre =================================================== */
+/* Deux déclencheurs, comme le constructeur : la préférence système, et
+   l'attribut `data-theme="dark"` (utilisé par la page de comparaison).
+   Les deux blocs doivent rester identiques : `check_tokens.py` le vérifie. */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #000000;
+    --bg-surface: #1c1c1e;
+    --bg-elevated: #2c2c2e;
+
+    --label: #f5f5f7;            /* 15,63:1 sur --bg-surface, 19,29:1 sur --bg */
+    --label-secondary: #98989d;  /*  5,93:1 sur --bg-surface */
+
+    --accent: #0a84ff;           /*  4,66:1 sur --bg-surface */
+    --accent-fill: #0066cc;      /* conservé pour que le libellé blanc reste 5,57:1 */
+    --on-accent-fill: #ffffff;
+    --accent-tint: rgba(10, 132, 255, 0.20);
+
+    --danger: #ff453a;           /*  4,99:1 sur --bg-surface */
+    --danger-fill: #d70015;
+    --danger-tint: rgba(255, 69, 58, 0.16);
+    --status-ok: #30d158;
+    --status-warn: #ffb340;
+
+    --separator: rgba(84, 84, 88, 0.60);
+    --separator-opaque: #38383a;
+    --scrim: rgba(0, 0, 0, 0.48);
+    --grabber: #8e8e93;          /* 5,10:1 sur --bg-surface */
+
+    --fill-1: rgba(120, 120, 128, 0.36);
+    --fill-2: rgba(120, 120, 128, 0.32);
+    --fill-3: rgba(120, 120, 128, 0.24);
+    --fill-4: rgba(120, 120, 128, 0.18);
+
+    --wash-1: rgba(10, 132, 255, 0.16);
+    --wash-2: rgba(48, 176, 199, 0.10);
+
+    --material-thin-tint: rgba(30, 30, 32, 0.62);
+    --material-regular-tint: rgba(30, 30, 32, 0.74);
+    --material-thick-tint: rgba(30, 30, 32, 0.86);
+
+    --glass-specular: rgba(255, 255, 255, 0.12);
+    --glass-inner-rim: rgba(255, 255, 255, 0.06);
+    --glass-outer-rim: rgba(0, 0, 0, 0.40);
+
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.30);
+    --shadow-2: 0 2px 8px rgba(0, 0, 0, 0.36);
+    --shadow-3: 0 8px 24px rgba(0, 0, 0, 0.44);
+    --shadow-4: 0 16px 48px rgba(0, 0, 0, 0.52);
+    --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.50);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #000000;
+  --bg-surface: #1c1c1e;
+  --bg-elevated: #2c2c2e;
+
+  --label: #f5f5f7;
+  --label-secondary: #98989d;
+
+  --accent: #0a84ff;
+  --accent-fill: #0066cc;
+  --on-accent-fill: #ffffff;
+  --accent-tint: rgba(10, 132, 255, 0.20);
+
+  --danger: #ff453a;
+  --danger-fill: #d70015;
+  --danger-tint: rgba(255, 69, 58, 0.16);
+  --status-ok: #30d158;
+  --status-warn: #ffb340;
+
+  --separator: rgba(84, 84, 88, 0.60);
+  --separator-opaque: #38383a;
+  --scrim: rgba(0, 0, 0, 0.48);
+  --grabber: #8e8e93;
+
+  --fill-1: rgba(120, 120, 128, 0.36);
+  --fill-2: rgba(120, 120, 128, 0.32);
+  --fill-3: rgba(120, 120, 128, 0.24);
+  --fill-4: rgba(120, 120, 128, 0.18);
+
+  --wash-1: rgba(10, 132, 255, 0.16);
+  --wash-2: rgba(48, 176, 199, 0.10);
+
+  --material-thin-tint: rgba(30, 30, 32, 0.62);
+  --material-regular-tint: rgba(30, 30, 32, 0.74);
+  --material-thick-tint: rgba(30, 30, 32, 0.86);
+
+  --glass-specular: rgba(255, 255, 255, 0.12);
+  --glass-inner-rim: rgba(255, 255, 255, 0.06);
+  --glass-outer-rim: rgba(0, 0, 0, 0.40);
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --shadow-2: 0 2px 8px rgba(0, 0, 0, 0.36);
+  --shadow-3: 0 8px 24px rgba(0, 0, 0, 0.44);
+  --shadow-4: 0 16px 48px rgba(0, 0, 0, 0.52);
+  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.50);
+}
