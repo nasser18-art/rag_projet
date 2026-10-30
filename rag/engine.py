@@ -41,12 +41,21 @@ class Source:
 class RagEngine:
     """Charge les artefacts une fois et répond aux questions du corpus."""
 
-    def __init__(self, config: Settings = settings) -> None:
+    def __init__(self, config: Settings = settings, index_provider=None) -> None:
         self.config = config
+        # Index par document (rag.index), injecté par l'application. Optionnel :
+        # le moteur reste utilisable seul, avec les artefacts historiques.
+        self._index_provider = index_provider
         self._chunks: list[dict] | None = None
         self._embeddings: np.ndarray | None = None
         self._model: object | None = None
         self._client: Groq | None = None
+
+    def _document_index(self):
+        return self._index_provider() if self._index_provider is not None else None
+
+    def _legacy_ready(self) -> bool:
+        return self.config.chunks_path.is_file() and self.config.embeddings_path.is_file()
 
     def _load_knowledge_base(self) -> None:
         if self._chunks is not None:
@@ -80,12 +89,28 @@ class RagEngine:
         return self._client
 
     def health(self) -> dict:
-        ready = self.config.chunks_path.is_file() and self.config.embeddings_path.is_file()
+        index = self._document_index()
+        ready = self._legacy_ready() or bool(index and index.ready)
         return {"status": "ok" if ready else "degraded", "knowledge_base_ready": ready, "llm_configured": bool(self.config.groq_api_key), "model": self.config.groq_model}
 
     def search(self, question: str, top_k: int | None = None) -> list[Source]:
         if not question.strip():
             return []
+        if not self._legacy_ready():
+            index = self._document_index()
+            if index is not None and index.ready:
+                return [
+                    Source(
+                        item["id"],
+                        item["document"],
+                        item["category"],
+                        int(item["chunk_id"]),
+                        item["text"],
+                        float(item["score"]),
+                    )
+                    for item in index.search(question, top_k=top_k or self.config.top_k)
+                ]
+            raise RagConfigurationError("Aucun document n'est indexé.")
         self._load_knowledge_base()
         assert self._chunks is not None and self._embeddings is not None
         vector = self._load_model().encode(question, normalize_embeddings=True)
@@ -95,6 +120,14 @@ class RagEngine:
         return [Source(f"{self._chunks[i]['source']}:{self._chunks[i]['chunk_id']}", self._chunks[i]["source"], self._chunks[i]["categorie"], int(self._chunks[i]["chunk_id"]), self._chunks[i]["texte"], float(scores[i])) for i in indices]
 
     def get_source(self, source_id: str) -> Source | None:
+        if not self._legacy_ready():
+            index = self._document_index()
+            if index is not None:
+                item = index.get_source(source_id)
+                if item is not None:
+                    return Source(item["id"], item["document"], item["category"],
+                                  int(item["chunk_id"]), item["text"], 0.0)
+            return None
         self._load_knowledge_base()
         assert self._chunks is not None
         for chunk in self._chunks:

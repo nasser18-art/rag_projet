@@ -10,3 +10,6 @@ chunks.json
 embeddings.npy
 textes_bruts/*.txt
 textes_propres/*.txt
+
+# Base documentaire locale (SQLite, index, fichiers importés)
+data/
