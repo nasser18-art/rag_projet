@@ -106,7 +106,9 @@ class SourceResponse(BaseModel):
     category: str
     chunk_id: int
     excerpt: str
-    score: float
+    # Le score n'a de sens qu'au moment de la recherche : il est renvoyé par le
+    # flux SSE, pas par la relecture d'une source (None plutôt qu'un faux 0.0).
+    score: float | None = None
     page: str | None = None
     document_id: str | None = None
 
@@ -337,7 +339,7 @@ def source(source_id: str) -> dict:
             "category": entry["category"],
             "chunk_id": entry["chunk_id"],
             "excerpt": entry["text"],
-            "score": 0.0,
+            "score": None,
             "page": entry["label"],
             "document_id": entry["document_id"],
         }
@@ -395,7 +397,7 @@ def chat(payload: ChatRequest):
     conversation = _existing_conversation(payload)
     try:
         if not payload.stream:
-            answer, sources = engine.answer(question)
+            answer, sources = engine.answer(question, category=payload.category)
             conversation = conversation or store.create_conversation(
                 title=_title_from_question(question), category=payload.category
             )
@@ -406,7 +408,7 @@ def chat(payload: ChatRequest):
                 "conversation_id": conversation["id"],
                 "message_id": message["id"],
             }
-        tokens, sources = engine.stream_answer(question)
+        tokens, sources = engine.stream_answer(question, category=payload.category)
     except HTTPException:
         raise
     except Exception as exc:  # RagConfigurationError, RagProviderError et tout imprévu

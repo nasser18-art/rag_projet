@@ -29,10 +29,10 @@ class StubEngine:
     def health(self) -> dict:
         return {"status": "ok", "knowledge_base_ready": True, "llm_configured": True, "model": "stub"}
 
-    def answer(self, question: str):
+    def answer(self, question: str, category: str | None = None):
         return "".join(self._tokens), self._sources
 
-    def stream_answer(self, question: str):
+    def stream_answer(self, question: str, category: str | None = None):
         self.calls += 1
         return iter(self._tokens), self._sources
 
@@ -41,7 +41,7 @@ class StubEngine:
 
 
 class FailingEngine(StubEngine):
-    def stream_answer(self, question: str):
+    def stream_answer(self, question: str, category: str | None = None):
         raise RagConfigurationError("index absent")
 
 

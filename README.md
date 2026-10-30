@@ -112,6 +112,19 @@ aucun redémarrage n'est nécessaire.
 | POST | `/api/messages/{id}/feedback` | `up`, `down` ou `null` |
 | GET | `/api/search?q=` | conversations + documents (palette ⌘K) |
 
+### Citations et provenance
+
+Le contexte envoyé au modèle est numéroté (`[1]`, `[2]`, …) et le prompt exige
+que chaque affirmation cite son numéro. Le flux SSE renvoie les mêmes sources
+dans le même ordre, avec leur provenance (`page`) et leur score de pertinence :
+l'interface peut donc transformer `[1]` en infobulle sans deviner.
+
+`POST /api/chat` accepte aussi `category` : la recherche est alors restreinte à
+cette base de connaissances (issue de `GET /api/knowledge-bases`).
+
+`GET /api/sources/{id}` renvoie `score: null` : un score n'a de sens qu'au
+moment de la recherche, et l'API ne fabrique pas de valeur par défaut.
+
 `POST /api/chat` accepte `conversation_id` (facultatif) : sans lui, une
 conversation est créée et titrée avec la question ; avec un identifiant inconnu,
 la route répond 404 sans rien écrire. Le flux SSE renvoie `conversation_id` dans

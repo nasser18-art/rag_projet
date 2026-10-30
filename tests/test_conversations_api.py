@@ -22,12 +22,12 @@ class StubEngine:
     def health(self) -> dict:
         return {"status": "ok", "knowledge_base_ready": True, "llm_configured": True, "model": "stub"}
 
-    def stream_answer(self, question: str):
+    def stream_answer(self, question: str, category: str | None = None):
         return iter(["Réponse ", "en flux."]), [
             Source("doc:0", "Contrat Atlas.pdf", "Juridique", 0, "Le préavis est de 90 jours.", 0.91)
         ]
 
-    def answer(self, question: str):
+    def answer(self, question: str, category: str | None = None):
         return "Réponse complète.", [
             Source("doc:0", "Contrat Atlas.pdf", "Juridique", 0, "Le préavis est de 90 jours.", 0.91)
         ]
@@ -126,7 +126,7 @@ class ConversationsApiTests(unittest.TestCase):
     def test_failed_chat_does_not_store_messages(self) -> None:
         writer = self.client.post("/api/conversations", json={"title": "Vide"}).json()
         application.engine = type("Broken", (StubEngine,), {
-            "stream_answer": lambda self, question: (_ for _ in ()).throw(Exception("boom"))
+            "stream_answer": lambda self, question, category=None: (_ for _ in ()).throw(Exception("boom"))
         })()
         try:
             response = self.client.post(
@@ -142,7 +142,7 @@ class ConversationsApiTests(unittest.TestCase):
         from rag.engine import RagConfigurationError
 
         application.engine = type("Degraded", (StubEngine,), {
-            "stream_answer": lambda self, question: (_ for _ in ()).throw(RagConfigurationError("index absent"))
+            "stream_answer": lambda self, question, category=None: (_ for _ in ()).throw(RagConfigurationError("index absent"))
         })()
         try:
             response = self.client.post("/api/chat", json={"question": "Question sans index"})
