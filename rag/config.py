@@ -23,6 +23,12 @@ class Settings:
     allowed_origins: tuple[str, ...] = tuple(origin.strip() for origin in os.getenv("ALLOWED_ORIGINS", "").split(",") if origin.strip())
     log_level: str = os.getenv("LOG_LEVEL", "INFO")
 
+    # --- base documentaire (P1) --------------------------------------------
+    data_dir: Path = Path(os.getenv("DATA_DIR") or PROJECT_ROOT / "data")
+    max_upload_bytes: int = int(float(os.getenv("MAX_UPLOAD_MB", "25")) * 1024 * 1024)
+    chunk_size: int = int(os.getenv("CHUNK_SIZE", "1000"))
+    chunk_overlap: int = int(os.getenv("CHUNK_OVERLAP", "150"))
+
     @property
     def chunks_path(self) -> Path:
         return self.project_root / "chunks.json"
@@ -30,6 +36,31 @@ class Settings:
     @property
     def embeddings_path(self) -> Path:
         return self.project_root / "embeddings.npy"
+
+    @property
+    def database_path(self) -> Path:
+        return self.data_dir / "rag.db"
+
+    @property
+    def index_dir(self) -> Path:
+        return self.data_dir / "index"
+
+    @property
+    def uploads_dir(self) -> Path:
+        return self.data_dir / "documents"
+
+    @property
+    def allowed_extensions(self) -> tuple[str, ...]:
+        """Formats réellement extractibles par rag/documents.py.
+
+        Cette liste est la seule source de vérité : c'est elle qui alimente
+        l'interface (voir GET /api/knowledge-bases) et la validation d'upload.
+        """
+        return ("pdf", "docx", "csv", "xlsx")
+
+    def ensure_directories(self) -> None:
+        for path in (self.data_dir, self.index_dir, self.uploads_dir):
+            path.mkdir(parents=True, exist_ok=True)
 
 
 settings = Settings()
