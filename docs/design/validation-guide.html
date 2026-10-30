@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guide de revue visuelle — Assistant documentaire</title>
+<style>
+  :root {
+    --ink: #1d1d1f;
+    --muted: #5f6368;
+    --line: #d2d2d7;
+    --page: #f5f5f7;
+    --card: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 40px 32px 96px;
+    background: var(--page);
+    color: var(--ink);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  }
+  header, section { max-width: 1180px; margin: 0 auto; }
+  h1 { font-size: 30px; letter-spacing: -0.02em; margin: 0 0 8px; }
+  h2 { font-size: 19px; letter-spacing: -0.01em; margin: 0 0 4px; }
+  p { margin: 0 0 12px; }
+  .lede { color: var(--muted); max-width: 78ch; }
+  .note {
+    border-left: 3px solid var(--ink);
+    background: var(--card);
+    padding: 14px 18px;
+    margin: 20px 0 28px;
+    border-radius: 0 10px 10px 0;
+  }
+  .note strong { display: block; margin-bottom: 4px; }
+  section { margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--line); }
+  .meta { color: var(--muted); font-size: 13px; margin-bottom: 14px; }
+  .frames { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 1000px) { .frames { grid-template-columns: 1fr; } }
+  .frame {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 10px;
+  }
+  .frame figcaption {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 8px;
+    font-variant-numeric: tabular-nums;
+  }
+  .viewport { overflow: hidden; border-radius: 8px; background: #fff; }
+  .viewport--desktop { width: 100%; height: 470px; }
+  .viewport--desktop iframe {
+    width: 1440px; height: 900px;
+    border: 0; transform: scale(0.5); transform-origin: top left;
+  }
+  .viewport--mobile { width: 390px; max-width: 100%; height: 720px; }
+  .viewport--mobile iframe { width: 390px; height: 720px; border: 0; }
+  .row { display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-start; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; background: var(--card); }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-weight: 600; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+  ul { padding-left: 20px; }
+  .toolbar { display: flex; gap: 10px; align-items: center; margin-top: 18px; }
+  button {
+    font: inherit; font-weight: 600; padding: 8px 16px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--card); cursor: pointer;
+  }
+  button:focus-visible { outline: 2px solid #0066cc; outline-offset: 2px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Guide de revue visuelle</h1>
+  <p class="lede">Substitut aux captures d'écran de la phase 5. Chaque encadré est une <em>iframe</em> qui charge la vraie page servie par uvicorn, dans un état forcé par l'URL : <code>?demo=…&amp;theme=…</code>. Aucune maquette n'est redessinée ici : ce que vous voyez est le produit.</p>
+
+  <div class="note">
+    <strong>Pourquoi un guide et pas des images ?</strong>
+    <p style="margin:0">Playwright ne peut pas être installé dans cet environnement (<code>npx playwright install chromium</code> échoue au téléchargement, deux tentatives, aucun navigateur système). Les captures avant/après en PNG sont donc <strong>impossibles</strong>, et je ne les fabrique pas. Ce fichier est le substitut annoncé en phase 0 : il rend les états réels, dans les deux apparences et les deux largeurs, et laisse la capture à votre navigateur (<code>Ctrl+Maj+P</code> → « Capture d'écran pleine page »).</p>
+  </div>
+
+  <p class="meta">Serveur requis : <code>uvicorn app:app --host 0.0.0.0 --port 8000</code>, puis ouvrir <code>docs/design/validation-guide.html</code> depuis le disque. Les iframes pointent vers <code>http://localhost:8000</code>.</p>
+
+  <div class="toolbar">
+    <button type="button" id="reload">Recharger les aperçus</button>
+    <span class="meta" id="status" style="margin:0"></span>
+  </div>
+
+  <table style="margin-top:26px">
+    <thead>
+      <tr><th>État</th><th>Déclencheur</th><th>Ce qu'il faut vérifier à l'œil</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Accueil</td><td>ouverture de la page</td><td>verre de la barre et de la capsule sur le lavis ; 2×2 cartes alignées à la colonne ; pastille d'état avec texte</td></tr>
+      <tr><td>En cours</td><td>question envoyée, flux ouvert</td><td>squelettes de cartes avant tout texte ; points de frappe ; jamais de saut de mise en page</td></tr>
+      <tr><td>Réponse + sources</td><td>flux terminé</td><td>bulle à droite en aplat d'accent ; réponse sans cadre, 68 ch ; rail horizontal de cartes-documents avec jauge</td></tr>
+      <tr><td>Feuille ouverte</td><td>clic sur une carte</td><td>verre épais, poignée 36×5, rayon 28 en haut, scrim, contenu lisible</td></tr>
+      <tr><td>Erreur</td><td>503 / 502 / réseau</td><td>titre qui dit quoi faire, action de reprise, aucune couleur seule</td></tr>
+    </tbody>
+  </table>
+</header>
+
+<section>
+  <h2>1 · Accueil</h2>
+  <p class="meta"><code>/</code> — Colonne 720 px, barre flottante, capsule de saisie ancrée en bas.</p>
+  <div class="row">
+    <figure class="frame">
+      <figcaption>1440 · clair — <code>/?demo=welcome&amp;theme=light</code></figcaption>
+      <div class="viewport viewport--desktop"><iframe title="Accueil 1440 clair" loading="lazy" src="http://localhost:8000/?demo=welcome&amp;theme=light"></iframe></div>
+    </figure>
+    <figure class="frame">
+      <figcaption>1440 · sombre — <code>/?demo=welcome&amp;theme=dark</code></figcaption>
+      <div class="viewport viewport--desktop"><iframe title="Accueil 1440 sombre" loading="lazy" src="http://localhost:8000/?demo=welcome&amp;theme=dark"></iframe></div>
+    </figure>
+  </div>
+  <div class="row" style="margin-top:18px">
+    <figure class="frame">
+      <figcaption>390 · clair</figcaption>
+      <div class="viewport viewport--mobile"><iframe title="Accueil 390 clair" loading="lazy" src="http://localhost:8000/?demo=welcome&amp;theme=light"></iframe></div>
+    </figure>
+    <figure class="frame">
+      <figcaption>390 · sombre</figcaption>
+      <div class="viewport viewport--mobile"><iframe title="Accueil 390 sombre" loading="lazy" src="http://localhost:8000/?demo=welcome&amp;theme=dark"></iframe></div>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <h2>2 · En cours de réponse</h2>
+  <p class="meta"><code>/?demo=streaming</code> — Squelettes remplacés par les cartes, texte partiel, indicateur de frappe.</p>
+  <div class="row">
+    <figure class="frame">
+      <figcaption>1440 · clair</figcaption>
+      <div class="viewport viewport--desktop"><iframe title="Streaming 1440 clair" loading="lazy" src="http://localhost:8000/?demo=streaming&amp;theme=light"></iframe></div>
+    </figure>
+    <figure class="frame">
+      <figcaption>1440 · sombre</figcaption>
+      <div class="viewport viewport--desktop"><iframe title="Streaming 1440 sombre" loading="lazy" src="http://localhost:8000/?demo=streaming&amp;theme=dark"></iframe></div>
+    </figure>
+  </div>
+  <div class="row" style="margin-top:18px">
+    <figure class="frame">
+      <figcaption>390 · clair</figcaption>
+      <div class="viewport viewport--mobile"><iframe title="Streaming 390 clair" loading="lazy" src="http://localhost:8000/?demo=streaming&amp;theme=light"></iframe></div>
+    </figure>
+    <figure class="frame">
+      <figcaption>390 · sombre</figcaption>
+      <div class="viewport viewport--mobile"><iframe title="Streaming 390 sombre" loading="lazy" src="http://localhost:8000/?demo=streaming&amp;theme=dark"></iframe></div>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <h2>3 · Réponse et sources</h2>
+  <p class="meta"><code>/?demo=answer</code> — Élément signature : la tranche de la carte et la jauge qui en part.</p>
+  <div class="row">
+    <figure class="frame">
+      <figcaption>1440 · clair</figcaption>
+      <div class="viewport viewport--desktop"><iframe title="Réponse 1440 clair" loading="lazy" src="http://localhost:8000/?demo=answer&amp;theme=light"></iframe></div>
+    </figure>
+    <figure class="frame">
+      <figcaption>1440 · sombre</figcaption>
+      <div class="viewport viewport--desktop"><iframe title="Réponse 1440 sombre" loading="lazy" src="http://localhost:8000/?demo=answer&amp;theme=dark"></iframe></div>
+    </figure>
+  </div>
+  <div class="row" style="margin-top:18px">
+    <figure class="frame">
+      <figcaption>390 · clair</figcaption>
+      <div class="viewport viewport--mobile"><iframe title="Réponse 390 clair" loading="lazy" src="http://localhost:8000/?demo=answer&amp;theme=light"></iframe></div>
+    </figure>
+    <figure class="frame">
+      <figcaption>390 · sombre</figcaption>
+      <div class="viewport viewport--mobile"><iframe title="Réponse 390 sombre" loading="lazy" src="http://localhost:8000/?demo=answer&amp;theme=dark"></iframe></div>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <h2>4 · Feuille ouverte</h2>
+  <p class="meta"><code>/?demo=sheet</code> — Verre épais, poignée, scrim ; glisser vers le bas ou Échap pour fermer.</p>
+  <div class="row">
+    <figure class="frame">
+      <figcaption>1440 · clair</figcaption>
+      <div class="viewport viewport--desktop"><iframe title="Feuille 1440 clair" loading="lazy" src="http://localhost:8000/?demo=sheet&amp;theme=light"></iframe></div>
+    </figure>
+    <figure class="frame">
+      <figcaption>1440 · sombre</figcaption>
+      <div class="viewport viewport--desktop"><iframe title="Feuille 1440 sombre" loading="lazy" src="http://localhost:8000/?demo=sheet&amp;theme=dark"></iframe></div>
+    </figure>
+  </div>
+  <div class="row" style="margin-top:18px">
+    <figure class="frame">
+      <figcaption>390 · clair</figcaption>
+      <div class="viewport viewport--mobile"><iframe title="Feuille 390 clair" loading="lazy" src="http://localhost:8000/?demo=sheet&amp;theme=light"></iframe></div>
+    </figure>
+    <figure class="frame">
+      <figcaption>390 · sombre</figcaption>
+      <div class="viewport viewport--mobile"><iframe title="Feuille 390 sombre" loading="lazy" src="http://localhost:8000/?demo=sheet&amp;theme=dark"></iframe></div>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <h2>5 · Erreur 503</h2>
+  <p class="meta"><code>/?demo=error</code> — Chemin réellement observable sans clé Groq.</p>
+  <div class="row">
+    <figure class="frame">
+      <figcaption>1440 · clair</figcaption>
+      <div class="viewport viewport--desktop"><iframe title="Erreur 1440 clair" loading="lazy" src="http://localhost:8000/?demo=error&amp;theme=light"></iframe></div>
+    </figure>
+    <figure class="frame">
+      <figcaption>1440 · sombre</figcaption>
+      <div class="viewport viewport--desktop"><iframe title="Erreur 1440 sombre" loading="lazy" src="http://localhost:8000/?demo=error&amp;theme=dark"></iframe></div>
+    </figure>
+  </div>
+  <div class="row" style="margin-top:18px">
+    <figure class="frame">
+      <figcaption>390 · clair</figcaption>
+      <div class="viewport viewport--mobile"><iframe title="Erreur 390 clair" loading="lazy" src="http://localhost:8000/?demo=error&amp;theme=light"></iframe></div>
+    </figure>
+    <figure class="frame">
+      <figcaption>390 · sombre</figcaption>
+      <div class="viewport viewport--mobile"><iframe title="Erreur 390 sombre" loading="lazy" src="http://localhost:8000/?demo=error&amp;theme=dark"></iframe></div>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <h2>6 · Navigation clavier et préférences</h2>
+  <p>À faire dans la vraie page (<code>http://localhost:8000/</code>), pas dans les iframes :</p>
+  <ul>
+    <li><kbd>Tab</kbd> depuis le chargement : lien d'évitement → historique → nouvelle conversation → 4 cartes → zone de saisie → envoyer → arrêter.</li>
+    <li>Anneau de focus visible sur chaque arrêt ; la capsule entière s'illumine quand le champ est actif.</li>
+    <li><kbd>Entrée</kbd> envoie, <kbd>Maj+Entrée</kbd> ajoute une ligne, <kbd>Échap</kbd> ferme la feuille et rend le focus au déclencheur.</li>
+    <li>Le compteur n'apparaît qu'à partir de 3 500 caractères.</li>
+    <li>Réglages système : « Réduire les animations » (plus de déplacement, plus de pulsation), « Réduire la transparence » (surfaces opaques), « Augmenter le contraste » (contour réel).</li>
+  </ul>
+  <p class="meta">Sans <code>backdrop-filter</code>, le repli <code>@supports</code> remplace le verre par une surface opaque : à vérifier dans Firefox avec <code>layout.css.backdrop-filter.enabled=false</code>.</p>
+</section>
+
+<script>
+  document.getElementById('reload').addEventListener('click', () => {
+    document.querySelectorAll('iframe').forEach((frame) => {
+      frame.src = frame.src;
+    });
+    const status = document.getElementById('status');
+    status.textContent = 'Aperçus rechargés.';
+    window.setTimeout(() => { status.textContent = ''; }, 2500);
+  });
+</script>
+</body>
+</html>

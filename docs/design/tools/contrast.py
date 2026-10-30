@@ -1,12 +1,15 @@
 """Calcule les ratios de contraste WCAG 2.1 (AA) de la palette du projet.
 
 Deux sections :
-  1. « Après refonte » : les couples de jetons sont LUS dans frontend/styles.css
+  1. « Après refonte » : les couples de jetons sont LUS dans frontend/css/tokens.css
      (bloc clair et bloc sombre). Si quelqu'un change une couleur, ce script
      mesure la nouvelle valeur — rien n'est recopié à la main.
   2. « Avant refonte » : la palette d'origine, conservée ici parce que les
      valeurs n'existent plus dans le CSS. Elle sert de référence à
      docs/design/audit.md.
+
+Les jetons translucides (rgba) ne peuvent pas être mesurés deux à deux : ils
+sont contrôlés à la main sur la surface qu'ils recouvrent (voir verification.md).
 
 Seuils appliqués (accessibility.md › Vision, tableau WCAG AA) :
   - texte jusqu'à 17 pt : 4,5:1
@@ -27,29 +30,23 @@ import re
 import sys
 from pathlib import Path
 
-STYLESHEET = Path(__file__).resolve().parents[3] / "frontend" / "styles.css"
+STYLESHEET = Path(__file__).resolve().parents[3] / "frontend" / "css" / "tokens.css"
 
 # (avant-plan, arrière-plan, libellé, type de seuil)
 PAIRS = [
-    ("--color-text", "--color-bg", "texte principal / fond", "text"),
-    ("--color-text", "--color-surface", "texte principal / surface", "text"),
-    ("--color-text-muted", "--color-bg", "texte secondaire / fond", "text"),
-    ("--color-text-muted", "--color-surface", "texte secondaire / surface", "text"),
-    ("--color-text-muted", "--color-surface-sunken", "texte secondaire / zone en creux", "text"),
-    ("--color-text-placeholder", "--color-surface", "placeholder / surface", "text"),
-    ("--color-text-on-accent", "--color-accent-solid", "texte / aplat d'action primaire", "text"),
-    ("--color-accent", "--color-surface", "lien et icône / surface", "text"),
-    ("--color-accent", "--color-accent-soft", "accent / fond d'accent", "text"),
-    ("--color-text", "--color-user-bubble", "texte / bulle de l'utilisateur", "text"),
-    ("--color-text-on-accent", "--color-avatar-assistant", "glyphe / avatar assistant", "text"),
-    ("--color-text", "--color-avatar-user", "glyphe / avatar utilisateur", "text"),
-    ("--color-danger", "--color-surface", "erreur / surface", "text"),
-    ("--color-danger", "--color-danger-soft", "erreur / fond d'erreur", "text"),
-    ("--color-success", "--color-surface", "confirmation / surface", "text"),
-    ("--color-border-strong", "--color-surface", "limite de contrôle / surface", "ui"),
-    ("--color-border-strong", "--color-bg", "limite de contrôle / fond", "ui"),
-    ("--color-focus-ring", "--color-bg", "anneau de focus / fond", "ui"),
-    ("--color-focus-ring", "--color-surface", "anneau de focus / surface", "ui"),
+    ("--label", "--bg", "texte principal / fond", "text"),
+    ("--label", "--bg-surface", "texte principal / surface", "text"),
+    ("--label-secondary", "--bg", "texte secondaire / fond", "text"),
+    ("--label-secondary", "--bg-surface", "texte secondaire / surface", "text"),
+    ("--accent", "--bg", "accent / fond", "text"),
+    ("--accent", "--bg-surface", "accent / surface", "text"),
+    ("--on-accent-fill", "--accent-fill", "libelle / aplat d'action", "text"),
+    ("--danger", "--bg", "erreur / fond", "text"),
+    ("--danger", "--bg-surface", "erreur / surface", "text"),
+    ("--status-ok", "--bg-surface", "pastille d'etat / surface", "ui"),
+    ("--grabber", "--bg-surface", "poignee de feuille / surface", "ui"),
+    ("--separator", "--bg-surface", "filet de carte / surface", "decor"),
+    ("--separator-opaque", "--bg-surface", "barre de defilement / surface", "decor"),
 ]
 
 # Palette d'origine (avant refonte), pour la traçabilité de l'audit.
@@ -80,14 +77,26 @@ def luminance(rgb: tuple[float, float, float]) -> float:
     return 0.2126 * r + 0.7152 * g + 0.0722 * b
 
 
+def to_rgb(value: str, backdrop: tuple[float, float, float] = (1.0, 1.0, 1.0)) -> tuple[float, float, float]:
+    """Convertit un jeton en RGB, en compositant les rgba sur leur support."""
+    value = value.strip()
+    if value.startswith("#"):
+        return hex_to_rgb(value)
+    numbers = re.findall(r"[\d.]+", value)
+    r, g, b = (float(number) / 255 for number in numbers[:3])
+    alpha = float(numbers[3]) if len(numbers) > 3 else 1.0
+    return tuple(channel * alpha + base * (1 - alpha) for channel, base in zip((r, g, b), backdrop))  # type: ignore[return-value]
+
+
 def ratio(foreground: str, background: str) -> float:
-    l1, l2 = luminance(hex_to_rgb(foreground)), luminance(hex_to_rgb(background))
+    background_rgb = to_rgb(background)
+    l1, l2 = luminance(to_rgb(foreground, background_rgb)), luminance(background_rgb)
     high, low = max(l1, l2), min(l1, l2)
     return (high + 0.05) / (low + 0.05)
 
 
 def threshold(kind: str) -> float:
-    return 3.0 if kind == "ui" else 4.5
+    return {"ui": 3.0, "decor": 0.0}.get(kind, 4.5)
 
 
 def parse_blocks(css: str) -> tuple[dict[str, str], dict[str, str]]:
@@ -95,10 +104,11 @@ def parse_blocks(css: str) -> tuple[dict[str, str], dict[str, str]]:
     light_match = re.search(r":root\s*\{(?P<body>[^}]*)\}", without_comments, re.S)
     dark_match = re.search(r':root\[data-theme="dark"\]\s*\{(?P<body>[^}]*)\}', without_comments, re.S)
     if not light_match or not dark_match:
-        raise SystemExit("Blocs de jetons introuvables dans frontend/styles.css")
+        raise SystemExit("Blocs de jetons introuvables dans frontend/css/tokens.css")
 
     def collect(body: str) -> dict[str, str]:
-        return dict(re.findall(r"(--[a-z0-9-]+)\s*:\s*(#[0-9a-fA-F]{3,8})\s*;", body))
+        return dict(re.findall(
+            r"(--[a-z0-9-]+)\s*:\s*(#[0-9a-fA-F]{3,8}|rgba?\([^)]*\))\s*;", body))
 
     return collect(light_match.group("body")), collect(dark_match.group("body"))
 
@@ -116,6 +126,10 @@ def report(rows: list[tuple[str, str, str, str]], tokens: dict[str, str], title:
         value = ratio(tokens[foreground], tokens[background])
         limit = threshold(kind)
         status = "OK" if value >= limit else "ECHEC"
+        if kind == "decor":
+            print(f"  {label.ljust(width)}  {value:5.2f}:1  decoratif, hors seuil"
+                  f"   [{tokens[foreground]} sur {tokens[background]}]")
+            continue
         if value < limit:
             failures += 1
         print(f"  {label.ljust(width)}  {value:5.2f}:1  seuil {limit:.1f}  {status}"
