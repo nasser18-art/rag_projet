@@ -947,3 +947,132 @@
   gap: var(--space-2);
 }
 
+/* ----------------------------------------------------------------------------
+   12. Adaptation
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 760px) {
+  :root {
+    --measure: 100%;
+    --topbar-h: 56px;
+  }
+
+  .topbar {
+    top: var(--space-2);
+    width: calc(100% - 2 * var(--space-2));
+    margin-top: var(--space-2);
+    padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+    gap: var(--space-2);
+  }
+
+  .topbar__title {
+    display: none;
+  }
+
+  .status-pill {
+    padding: 0 var(--space-2);
+  }
+
+  .status-pill__label {
+    display: none; /* la pastille garde son libellé accessible via aria-label */
+  }
+
+  .column {
+    width: calc(100% - 2 * var(--space-4));
+    padding-top: var(--space-6);
+  }
+
+  .welcome__title {
+    font-size: var(--text-title-1);
+  }
+
+  .welcome__lede {
+    font-size: var(--text-body);
+  }
+
+  .suggestions {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .msg--user .msg__bubble {
+    max-width: 88%;
+  }
+
+  .sheet {
+    --sheet-max: 92dvh;
+  }
+}
+
+@media (max-width: 420px) {
+  .topbar__mark {
+    display: none;
+  }
+
+  .composer {
+    padding-left: var(--space-4);
+  }
+}
+
+/* ============================================================================
+   13. Mouvement
+   ========================================================================== */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+@keyframes fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes gauge {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -60% 0; }
+}
+
+/* Mouvement réduit : plus de déplacement ni de pulsation ; le retour à
+   l'appui (couleur, opacité) est conservé. */
+@media (prefers-reduced-motion: reduce) {
+  .msg,
+  .welcome {
+    animation: none;
+  }
+
+  .typing__dots span {
+    animation: none;
+    opacity: 0.6;
+  }
+
+  .doc__fill {
+    animation: none;
+  }
+
+  .skeleton {
+    animation: none;
+    background: var(--fill-3);
+  }
+
+  .sheet,
+  .sheet[data-open="true"] {
+    transition: none;
+  }
+}
